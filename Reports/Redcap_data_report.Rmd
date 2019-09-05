@@ -6,7 +6,7 @@ output: html_document
 ---
 
 
-```{r , echo=FALSE}
+```{r, include=FALSE}
 
 library(tidyr)
 library(dplyr)
@@ -45,7 +45,7 @@ events_to_retain  <- c("beach_interview_phone_screen","beach_interview_study_enc
 exportEvents(rcon)
 
 # list records
-exportRecords(rcon)
+#exportRecords(rcon)  I don't know why having this in a report is an issue
 
 # export field names
 exportFieldNames(rcon)
@@ -77,22 +77,23 @@ ds_some_rows_v1 <- redcap_read(
   fields     = desired_fields
   
 )$data
+
 ```
 
 
 ## Figures Plots
-```{r}
+```{r, echo=FALSE}
 Totals <- ds_some_rows_v1%>%
   select(learn_about_study_int)%>%
   group_by(learn_about_study_int)%>%
   summarize(count=n())%>%
   rename("how did you hear about us?"=learn_about_study_int)
 
-kable(Totals)
+print(Totals)
 ```
 
 
-```{r}
+```{r, echo=FALSE}
 Encounter_per_Time <- ds_some_rows_v1%>%
   separate(encounter_date_int,c("y","m","d"))%>%
   group_by(learn_about_study_int,m,y)%>%
