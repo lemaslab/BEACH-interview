@@ -118,4 +118,70 @@ h + geom_histogram(aes(fill=factor(learn_about_study_int)), stat = "Identity",
   theme(axis.text.x = element_text(angle=70, vjust =.6))
 
 
+
+
+# provides the number of total passed participants per month per encounter type(how they learned about our study) 
+total_pass <- ds_some_rows_v1%>%
+  select(int_phone_pass_fail,learn_about_study_int,encounter_date_int)%>%
+  separate(encounter_date_int,c("y","m","d"))%>%
+  filter(int_phone_pass_fail==1)%>%
+  group_by(m,y,int_phone_pass_fail,learn_about_study_int)%>%
+  summarize(count=n())%>%
+  unite("YM",c("y","m"),sep ="-")
+
+print(total_pass)
+
+t <- ggplot(total_pass, aes(YM, count, int_phone_pass_fail)) + scale_fill_brewer(palette = "Spectral")
+t + geom_histogram(aes(fill=factor(learn_about_study_int)), stat = "Identity",
+                   bins=24,
+                   col="black", 
+                   size=.1) + # change number of bins
+  # geom_density() + #this function is meant to draw a trend line for the graph
+  # stat_bin(aes(y=count,label=count),geom="text",vjust=-.5) +   # this will display the total count of each bin
+  labs(title="Number of Passed participants per month per encounter type", 
+       subtitle="from july of 2017-January 2019",
+       x="Date(Year-Month)",
+       y="Count",
+       fill="How did you learn about the study") +
+  theme(axis.text.x = element_text(angle=70, vjust =.6))
+
+
+
+# Display the number of participants that passed the screening each month for Social Media
+social_pass <- ds_some_rows_v1%>%
+  select(int_phone_pass_fail,learn_about_study_int,encounter_date_int)%>%
+  separate(encounter_date_int,c("y","m","d"))%>%
+  filter(learn_about_study_int==3, int_phone_pass_fail==1)%>%
+  group_by(m,y,int_phone_pass_fail)%>%
+  summarize(count=n())%>%
+  unite("YM",c("y","m"),sep ="-")
+
+print(social_pass)
+
+g <- ggplot(social_pass, aes(YM, count))
+g + geom_bar(stat="identity", width = 0.5, fill="tomato2") + 
+  labs(title="Social Media Pass participants", 
+       x="Date(Year-Month)",
+       y="count") +
+  theme(axis.text.x = element_text(angle=65, vjust=0.6))
+
+# Display the number of participants that passed the screening each month for Flyers
+flyer_pass <- ds_some_rows_v1%>%
+  select(int_phone_pass_fail,learn_about_study_int,encounter_date_int)%>%
+  separate(encounter_date_int,c("y","m","d"))%>%
+  filter(learn_about_study_int==1, int_phone_pass_fail==1)%>%
+  group_by(m,y,int_phone_pass_fail)%>%
+  summarize(count=n())%>%
+  unite("YM",c("y","m"),sep ="-")
+
+print(flyer_pass)
+
+g <- ggplot(flyer_pass, aes(YM, count))
+g + geom_bar(stat="identity", width = 0.5, fill="tomato2") + 
+  labs(title="Flyer Pass participants", 
+       x="Date(Year-Month)",
+       y="count") +
+  theme(axis.text.x = element_text(angle=65, vjust=0.6))
+
+
 ```
