@@ -35,7 +35,10 @@ rcon <- redcapConnection(url=uri, token=beach_token)
 
 # crc variables
 fields <- exportFieldNames(rcon)
-desired_fields <- c("record_id","int_phone_pass_fail","encounter_date_int","encounter_type_int","beach_interview_study_encounters_complete","learn_about_study_int")
+desired_fields <- c("record_id","int_phone_pass_fail","encounter_date_int","encounter_type_int",
+                    "beach_interview_study_encounters_complete",
+                    "learn_about_study_int","int_consent_complete")
+
 
 # events to retain
 exportEvents(rcon)
@@ -81,7 +84,7 @@ ds_some_rows_v1 <- redcap_read(
 ```
 
 
-## Figures Plots
+## Figures Plots of Total Encounters
 ```{r, echo=FALSE}
 Totals <- ds_some_rows_v1%>%
   select(learn_about_study_int)%>%
@@ -179,6 +182,81 @@ print(flyer_pass)
 g <- ggplot(flyer_pass, aes(YM, count))
 g + geom_bar(stat="identity", width = 0.5, fill="tomato2") + 
   labs(title="Flyer Pass participants", 
+       x="Date(Year-Month)",
+       y="count") +
+  theme(axis.text.x = element_text(angle=65, vjust=0.6))
+
+
+
+```
+
+
+##Figures of Encounters with Consented Participants
+
+```{r, echo=FALSE}
+# Provides a filter to the data to view how particpnats heard about the study AND consented. Showed greater favor for Facebook recruitment.
+
+Consent_per_Time <- ds_some_rows_v1%>%
+  separate(encounter_date_int,c("y","m","d"))%>%
+  filter(int_consent_complete==1)%>%
+  group_by(learn_about_study_int,m,y)%>%
+  summarize(count=n())%>%
+  unite("YM",c("y","m"),sep ="-")
+
+
+theme_set(theme_classic())
+
+# distribution of visits each month(histogram)
+h <- ggplot(Consent_per_Time, aes(YM, count)) + scale_fill_brewer(palette = "Spectral")
+h + geom_histogram(aes(fill=factor(learn_about_study_int)), stat = "Identity",
+                   bins=24,
+                   col="black", 
+                   size=.1) + # change number of bins
+  #geom_text(aes(y=label_count,label=count), vjust=-.02) +  #doesn't work properly because cummulative sums aren't calulated 
+  # geom_density() + #this function is meant to draw a trend line for the graph
+  # stat_bin(aes(y=count,label=count),geom="text",vjust=-.5) +   # this will display the total count of each bin
+  labs(title="How participants heard of our study monthly", 
+       subtitle="from july of 2017-January 2019 and Have completed consent",
+       x="Date(Year-Month)",
+       y="Count",
+       fill="How did you learn about the study") +
+  theme(axis.text.x = element_text(angle=70, vjust =.6))
+
+
+# Display the number of participants that passed the consent each month, Flyers
+
+flyer_pass_consent <- ds_some_rows_v1%>%
+  select(learn_about_study_int,encounter_date_int,int_consent_complete)%>%
+  separate(encounter_date_int,c("y","m","d"))%>%
+  filter(learn_about_study_int==1, int_consent_complete==1)%>%
+  group_by(m,y,int_consent_complete)%>%
+  summarize(count=n())%>%
+  unite("YM",c("y","m"),sep ="-")
+
+print(flyer_pass_consent)
+
+g <- ggplot(flyer_pass_consent, aes(YM, count))
+g + geom_bar(stat="identity", width = 0.5, fill="tomato2") + 
+  labs(title="Flyer Consented Participants", 
+       x="Date(Year-Month)",
+       y="count") +
+  theme(axis.text.x = element_text(angle=65, vjust=0.6))
+
+
+# Display the number of participants that consented each month for Social Media
+social_pass_consent <- ds_some_rows_v1%>%
+  select(int_consent_complete,learn_about_study_int,encounter_date_int)%>%
+  separate(encounter_date_int,c("y","m","d"))%>%
+  filter(learn_about_study_int==3, int_consent_complete==1)%>%
+  group_by(m,y,int_consent_complete)%>%
+  summarize(count=n())%>%
+  unite("YM",c("y","m"),sep ="-")
+
+print(social_pass_consent)
+
+g <- ggplot(social_pass_consent, aes(YM, count))
+g + geom_bar(stat="identity", width = 0.5, fill="tomato2") + 
+  labs(title="Social Media consented participants", 
        x="Date(Year-Month)",
        y="count") +
   theme(axis.text.x = element_text(angle=65, vjust=0.6))
