@@ -23,7 +23,7 @@ library(lubridate)
 
 # Get Redcap API Token
 # # https://cran.r-project.org/web/packages/keyringr/vignettes/Avoiding_plain_text_passwords_in_R_with_keyringr.html
-credential_label <- "beach_interview_api"
+credential_label <- "interview_api"
 credential_path <- paste(Sys.getenv("USERPROFILE"), '\\DPAPI\\passwords\\', Sys.info()["nodename"], '\\', credential_label, '.txt', sep="")
 uri <- "https://redcap.ctsi.ufl.edu/redcap/api/"
 beach_token<-decrypt_dpapi_pw(credential_path)
