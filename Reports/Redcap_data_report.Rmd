@@ -2,7 +2,12 @@
 title: "Redcap Data report"
 author: "Luran M."
 date: "September 5, 2019"
-output: html_document
+output: 
+  html_document:
+    theme: spacelab
+    highlight: tango
+    toc: true
+    toc_float: true
 ---
 
 
@@ -23,7 +28,7 @@ library(lubridate)
 
 # Get Redcap API Token
 # # https://cran.r-project.org/web/packages/keyringr/vignettes/Avoiding_plain_text_passwords_in_R_with_keyringr.html
-credential_label <- "interview_api"
+credential_label <- "beach_interview_api"
 credential_path <- paste(Sys.getenv("USERPROFILE"), '\\DPAPI\\passwords\\', Sys.info()["nodename"], '\\', credential_label, '.txt', sep="")
 uri <- "https://redcap.ctsi.ufl.edu/redcap/api/"
 beach_token<-decrypt_dpapi_pw(credential_path)
@@ -80,6 +85,11 @@ ds_some_rows_v1 <- redcap_read(
   fields     = desired_fields
   
 )$data
+
+# recode encounter type
+test=ds_some_rows_v1 %>%
+  #use mutate(new column = recode(current column to be recoded, "variable in column"="new variable name"))
+    mutate(test = recode(learn_about_study_int, "1"="Flyer","3"="Facebook","5"="Other"))
 
 ```
 
@@ -260,6 +270,232 @@ g + geom_bar(stat="identity", width = 0.5, fill="tomato2") +
        x="Date(Year-Month)",
        y="count") +
   theme(axis.text.x = element_text(angle=65, vjust=0.6))
+
+
+```
+
+###test
+```{r}
+
+
+```
+
+##demographics
+###Maternal Age of participants
+```{r, echo=FALSE ,fig.cap= "Fig1: test"}
+#select all the maternal ages and remove NA values:
+
+Mat_age <- ds_some_rows_v1%>%
+  select(record_id,analysis_mat_age,learn_about_study_int)%>%
+  filter(!is.na(analysis_mat_age))%>%
+  filter(!is.na(learn_about_study_int))
+  
+print(Mat_age)
+
+#create a marginal Histogram / Boxplot for maternal ages by encounter type:
+Mat_age$learn_about_study_int <- as.factor(Mat_age$learn_about_study_int)
+
+    library(ggplot2)
+  theme_set(theme_classic())
+  
+  # Plot
+  g <- ggplot(Mat_age, aes(learn_about_study_int, analysis_mat_age))
+  g + geom_boxplot(varwidth=T, fill="plum") + 
+      labs(title="Age of Participants", 
+           subtitle="Divided into how they heard of the study",
+           caption="Source: BEACH Interview",
+           x="How did you hear of our study",
+           y="Age(years)")
+  
+```
+  
+  
+###BMI of Participants
+```{r, echo=FALSE, fig.cap="Fig2:BMI"}
+  #Determining the average BMI per enocunter type.  
+Pre_BMI <- ds_some_rows_v1%>%
+  select(record_id,analysis_bmi,learn_about_study_int)%>%
+  filter(!is.na(analysis_bmi))%>%
+  filter(!is.na(learn_about_study_int))
+  
+print(Pre_BMI)
+
+#create a marginal Histogram / Boxplot for maternal ages by encounter type:
+Pre_BMI$learn_about_study_int <- as.factor(Pre_BMI$learn_about_study_int)
+
+    library(ggplot2)
+  theme_set(theme_classic())
+  
+  # Plot
+  g <- ggplot(Pre_BMI, aes(learn_about_study_int, analysis_bmi))
+  g + geom_boxplot(varwidth=T, fill="plum") + 
+      labs(title="BMI of participants", 
+           subtitle="Divided into how they heard of the study",
+           caption="Source: BEACH Interview",
+           x="How did you hear of our study",
+           y="BMI")
+  
+  #Presenting amount of participnats per encounter per BMI catagories
+Pre_BMI_L25 <- ds_some_rows_v1%>%
+  select(record_id,analysis_bmi,learn_about_study_int)%>%
+  filter(!is.na(analysis_bmi))%>%
+  filter(!is.na(learn_about_study_int))%>%
+  filter(analysis_bmi<25)%>%
+  group_by(learn_about_study_int, analysis_bmi)%>%
+  summarise(count=n())
+
+Pre_BMI_between <- ds_some_rows_v1%>%
+  select(record_id,analysis_bmi,learn_about_study_int)%>%
+  filter(!is.na(analysis_bmi))%>%
+  filter(!is.na(learn_about_study_int))%>%
+  filter(analysis_bmi>25 & analysis_bmi<30)%>%
+  group_by(learn_about_study_int, analysis_bmi)%>%
+  summarise(count=n())
+
+
+Pre_BMI_H30 <- ds_some_rows_v1%>%
+  select(record_id,analysis_bmi,learn_about_study_int)%>%
+  filter(!is.na(analysis_bmi))%>%
+  filter(!is.na(learn_about_study_int))%>%
+  filter(analysis_bmi>30)%>%
+  group_by(learn_about_study_int, analysis_bmi)%>%
+  summarise(count=n())
+
+
+  #graph BMI groups per encounter
+
+
+
+g <- ggplot(Pre_BMI_L25, aes(x=learn_about_study_int,y=count,fill=analysis_bmi))
+g + geom_bar(stat="identity", width = 0.5) + geom_text(aes(label=count),vjust=-0.2) + 
+      labs(title="Distribution of participants with BMI<25", 
+           subtitle="Catagorized by How Particiapnt Heard of Study", 
+           caption="Source: BEACH Interview study") 
+
+g <- ggplot(Pre_BMI_between, aes(x=learn_about_study_int,y=count,fill=analysis_bmi))
+g + geom_bar(stat="identity", width = 0.5) + geom_text(aes(label=count),vjust=-0.2) + 
+      labs(title="Distribution of participants with BMI between 25 and 30", 
+           subtitle="Catagorized by How Particiapnt Heard of Study", 
+           caption="Source: BEACH Interview study") 
+
+g <- ggplot(Pre_BMI_H30, aes(x=learn_about_study_int,y=count,fill=analysis_bmi))
+g + geom_bar(stat="identity", width = 0.5) + geom_text(aes(label=count),vjust=-0.2) + 
+      labs(title="Distribution of participants with BMI>30", 
+           subtitle="Catagorized by How Particiapnt Heard of Study", 
+           caption="Source: BEACH Interview study") 
+
+#Level of education between participants
+```
+
+###Education Level of participants
+```{r, echo=FALSE, fig.cap="Fig3.Education"}
+Education <- ds_some_rows_v1%>%
+  select(record_id,mom3t_education_2)%>%
+  filter(!is.na(mom3t_education_2))%>%
+  group_by(mom3t_education_2)%>%
+  summarise(count=n())
+
+g <- ggplot(Education, aes(mom3t_education_2, count))
+g + geom_bar(stat="identity", width = 0.5, fill="tomato2") + 
+      labs(title="Education level of participants", 
+           subtitle="Catagorized by How Participant Heard of Study", 
+           caption="Source: BEACH Interview study") +
+  geom_text(aes(label=count),vjust=-0.2) +
+      theme(axis.text.x = element_text(angle=65, vjust=0.6)) 
+
+
+Education_encounter <- ds_some_rows_v1%>%
+  select(record_id,mom3t_education_2,learn_about_study_int)%>%
+  filter(!is.na(mom3t_education_2))%>%
+  filter(!is.na(learn_about_study_int))%>%
+  group_by(mom3t_education_2,learn_about_study_int)%>%
+  summarise(count=n())
+
+
+    
+theme_set(theme_classic())
+
+# distribution of visits each month(histogram)
+h <- ggplot(Education_encounter, aes(learn_about_study_int, count)) + scale_fill_brewer(palette = "Spectral")
+h + geom_histogram(aes(fill=factor(mom3t_education_2)), stat = "Identity",
+                   bins=24,
+                   col="black", 
+                   size=.1) + # change number of bins
+  # geom_density() + #this function is meant to draw a trend line for the graph
+  #geom_text(aes(y=count,label=count), colour="black") +   # this will display the total count of each bin
+  labs(title="Education level of participants per encounter type", 
+       subtitle="from july of 2017-January 2019",
+       x="encounter type",
+       y="Count",
+       fill="level of education") +
+  theme(axis.text.x = element_text(angle=70, vjust =.6))
+```
+
+
+```{r, echo=FALSE, fig.cap="fig4.Birth/pregnant"}
+A_Preg <- ds_some_rows_v1%>%
+  select(record_id,learn_about_study_int)%>%
+  slice(57:84)%>%
+  group_by(learn_about_study_int)%>%
+  summarise(count=n())
+print(A_Preg)
+
+g <- ggplot(A_Preg, aes(learn_about_study_int, count))
+g + geom_bar(stat="identity", width = 0.5, fill="tomato2") + 
+      labs(title="How Participant After Birth heard of our study", 
+           subtitle="only consented participnats", 
+           caption="Source: BEACH Interview study") +
+  geom_text(aes(label=count),vjust=-0.2) +
+      theme(axis.text.x = element_text(angle=65, vjust=0.6)) 
+
+C_Preg <- ds_some_rows_v1%>%
+  select(record_id,learn_about_study_int)%>%
+  slice(85:103)%>%
+  group_by(learn_about_study_int)%>%
+  summarise(count=n())
+print(C_Preg)
+
+g <- ggplot(C_Preg, aes(learn_about_study_int, count))
+g + geom_bar(stat="identity", width = 0.5, fill="tomato2") + 
+      labs(title="how pregnant participants heard of our study", 
+           subtitle="only consented participants", 
+           caption="Source: BEACH Interview study") +
+  geom_text(aes(label=count),vjust=-0.2) +
+      theme(axis.text.x = element_text(angle=65, vjust=0.6)) 
+```
+
+##Reviewing encounters without time
+```{r, echo=FALSE}
+encounters <- ds_some_rows_v1%>%
+  select(learn_about_study_int)%>%
+  filter(!is.na(learn_about_study_int))%>%
+  group_by(learn_about_study_int)%>%
+  summarize(count=n())
+
+g <- ggplot(encounters, aes(learn_about_study_int, count))
+g + geom_bar(stat="identity", width = 0.5, fill="tomato2") + 
+      labs(title="total of how participant learned about study", 
+           subtitle="concented and nonconsented", 
+           caption="Source: BEACH Interview study") +
+  geom_text(aes(label=count),vjust=-0.2) +
+      theme(axis.text.x = element_text(angle=65, vjust=0.6)) 
+
+
+encounters_consent <- ds_some_rows_v1%>%
+  select(learn_about_study_int,int_consent_complete)%>%
+  filter(!is.na(learn_about_study_int))%>%
+  replace_na(int_consent_complete=0)%>%
+  group_by(learn_about_study_int, int_consent_complete)%>%
+  summarise(count=n())
+
+
+g <- ggplot(encounters_consent, aes(x=learn_about_study_int,y=count,fill=int_consent_complete))
+g + geom_bar(stat="identity", width = 0.5) + geom_text(aes(label=count),vjust=-0.2) + 
+      labs(title="total of how participant learned about study", 
+           subtitle="concented and nonconsented", 
+           caption="Source: BEACH Interview study") 
+
+
 
 
 ```
