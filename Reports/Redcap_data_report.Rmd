@@ -280,13 +280,9 @@ g + geom_bar(stat="identity", width = 0.5, fill="tomato2") +
 
 ```
 
-###test
-```{r}
-
-
-```
 
 ##demographics
+
 ###Maternal Age of participants
 ```{r, echo=FALSE ,fig.cap= "Fig1: test"}
 #select all the maternal ages and remove NA values:
@@ -482,6 +478,39 @@ h + geom_histogram(aes(fill=factor(income)), stat = "Identity",
        y="Count",
        fill="Income Level") +
   theme(axis.text.x = element_text(angle=70, vjust =.6))
+
+```
+
+###Previous births
+```{r, echo=FALSE}
+previous_births <- ds_some_rows_v1%>%
+  select(record_id,previous_kids,learn_about_study)%>%
+  filter(!is.na(previous_kids))%>%
+  group_by(previous_kids)%>%
+  summarise(count=n())
+
+g <- ggplot(previous_births, aes(previous_kids, count))
+g + geom_bar(stat="identity", width = 0.5, fill="tomato2") + 
+      labs(title="how many participants have had a previous birth", 
+           caption="Source: BEACH Interview study") +
+  geom_text(aes(label=count),vjust=0.9) +
+      theme(axis.text.x = element_text(angle=65, vjust=0.6)) 
+
+
+previous_births <- ds_some_rows_v1%>%
+  select(learn_about_study,record_id,previous_kids)%>%
+  filter(!is.na(learn_about_study))%>%
+    filter(!is.na(previous_kids))%>%
+  group_by(learn_about_study,previous_kids)%>%
+  summarise(count=n())
+
+
+g <- ggplot(previous_births, aes(x=learn_about_study,y=count,fill=previous_kids))
+g + geom_bar(stat="identity", width = 0.5) + geom_text(aes(label=count),vjust=-0.2) + 
+      labs(title="How participants learned of study", 
+           subtitle="Did participant have a previous birth", 
+           caption="Source: BEACH Interview study") 
+
 
 ```
 
