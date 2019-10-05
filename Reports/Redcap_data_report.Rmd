@@ -41,8 +41,10 @@ rcon <- redcapConnection(url=uri, token=beach_token)
 # crc variables
 fields <- exportFieldNames(rcon)
 desired_fields <- c("record_id","int_phone_pass_fail","encounter_date_int","encounter_type_int",
-                    "beach_interview_study_encounters_complete",
-                    "learn_about_study_int","int_consent_complete")
+"beach_interview_study_encounters_complete",
+"learn_about_study_int","int_consent_complete",
+"analysis_mat_age_cats","analysis_bmi","mom3t_education_2",
+"analysis_mat_age","analysis_income","analysis_kids_previous")
 
 
 # events to retain
@@ -87,9 +89,12 @@ ds_some_rows_v1 <- redcap_read(
 )$data
 
 # recode encounter type
-test=ds_some_rows_v1 %>%
+ds_some_rows_v1=ds_some_rows_v1 %>%
   #use mutate(new column = recode(current column to be recoded, "variable in column"="new variable name"))
-    mutate(test = recode(learn_about_study_int, "1"="Flyer","3"="Facebook","5"="Other"))
+    mutate(learn_about_study = recode(learn_about_study_int, "1"="Flyer","3"="Facebook","5"="Other"))%>%
+  mutate(education_level = recode(mom3t_education_2,"1"="8th grade or less","2"="some high school","3"="high school diploma/GED","4"="some college or community college","5"="Associates degree","6"="completed tech or vocational school","7"="college graduate","8"="some graduate or professional school","9"="Graduate or professional degree"))%>%
+  mutate(previous_kids = recode(analysis_kids_previous, "1"="yes","0"="no"))%>%
+  mutate(income = recode(analysis_income, "1"="$0-$15,000","2"="$15,001-$19,000","3"="$19,001-$37,000","4"="$37,001-$44,000","5"="$44,001-$52,000","6"="$52,001-$56,000","7"="$56,001-$67,000","8"="$67,001-$79,000","9"="$79,001 or more"))
 
 ```
 
@@ -97,19 +102,20 @@ test=ds_some_rows_v1 %>%
 ## Figures Plots of Total Encounters
 ```{r, echo=FALSE}
 Totals <- ds_some_rows_v1%>%
-  select(learn_about_study_int)%>%
-  group_by(learn_about_study_int)%>%
+  select(learn_about_study)%>%
+  group_by(learn_about_study)%>%
   summarize(count=n())%>%
-  rename("how did you hear about us?"=learn_about_study_int)
+  rename("how did you hear about us?"=learn_about_study)
 
 print(Totals)
 ```
 
-
+##Encounters Over Time
+###Total Encounters
 ```{r, echo=FALSE}
 Encounter_per_Time <- ds_some_rows_v1%>%
   separate(encounter_date_int,c("y","m","d"))%>%
-  group_by(learn_about_study_int,m,y)%>%
+  group_by(learn_about_study,m,y)%>%
   summarize(count=n())%>%
   unite("YM",c("y","m"),sep ="-")
     
@@ -117,7 +123,7 @@ theme_set(theme_classic())
 
 # distribution of visits each month(histogram)
 h <- ggplot(Encounter_per_Time, aes(YM, count)) + scale_fill_brewer(palette = "Spectral")
-h + geom_histogram(aes(fill=factor(learn_about_study_int)), stat = "Identity",
+h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
                    bins=24,
                    col="black", 
                    size=.1) + # change number of bins
@@ -130,22 +136,22 @@ h + geom_histogram(aes(fill=factor(learn_about_study_int)), stat = "Identity",
        fill="How did you learn about the study") +
   theme(axis.text.x = element_text(angle=70, vjust =.6))
 
-
-
-
+```
+###Passed Participants
+```{r, echo=FALSE}
 # provides the number of total passed participants per month per encounter type(how they learned about our study) 
 total_pass <- ds_some_rows_v1%>%
-  select(int_phone_pass_fail,learn_about_study_int,encounter_date_int)%>%
+  select(int_phone_pass_fail,learn_about_study,encounter_date_int)%>%
   separate(encounter_date_int,c("y","m","d"))%>%
   filter(int_phone_pass_fail==1)%>%
-  group_by(m,y,int_phone_pass_fail,learn_about_study_int)%>%
+  group_by(m,y,int_phone_pass_fail,learn_about_study)%>%
   summarize(count=n())%>%
   unite("YM",c("y","m"),sep ="-")
 
 print(total_pass)
 
 t <- ggplot(total_pass, aes(YM, count, int_phone_pass_fail)) + scale_fill_brewer(palette = "Spectral")
-t + geom_histogram(aes(fill=factor(learn_about_study_int)), stat = "Identity",
+t + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
                    bins=24,
                    col="black", 
                    size=.1) + # change number of bins
@@ -157,14 +163,14 @@ t + geom_histogram(aes(fill=factor(learn_about_study_int)), stat = "Identity",
        y="Count",
        fill="How did you learn about the study") +
   theme(axis.text.x = element_text(angle=70, vjust =.6))
+```
 
-
-
+```{r, echo=FALSE}
 # Display the number of participants that passed the screening each month for Social Media
 social_pass <- ds_some_rows_v1%>%
-  select(int_phone_pass_fail,learn_about_study_int,encounter_date_int)%>%
+  select(int_phone_pass_fail,learn_about_study,encounter_date_int)%>%
   separate(encounter_date_int,c("y","m","d"))%>%
-  filter(learn_about_study_int==3, int_phone_pass_fail==1)%>%
+  filter(learn_about_study=="Facebook", int_phone_pass_fail==1)%>%
   group_by(m,y,int_phone_pass_fail)%>%
   summarize(count=n())%>%
   unite("YM",c("y","m"),sep ="-")
@@ -180,9 +186,9 @@ g + geom_bar(stat="identity", width = 0.5, fill="tomato2") +
 
 # Display the number of participants that passed the screening each month for Flyers
 flyer_pass <- ds_some_rows_v1%>%
-  select(int_phone_pass_fail,learn_about_study_int,encounter_date_int)%>%
+  select(int_phone_pass_fail,learn_about_study,encounter_date_int)%>%
   separate(encounter_date_int,c("y","m","d"))%>%
-  filter(learn_about_study_int==1, int_phone_pass_fail==1)%>%
+  filter(learn_about_study=="Flyer", int_phone_pass_fail==1)%>%
   group_by(m,y,int_phone_pass_fail)%>%
   summarize(count=n())%>%
   unite("YM",c("y","m"),sep ="-")
@@ -286,20 +292,20 @@ g + geom_bar(stat="identity", width = 0.5, fill="tomato2") +
 #select all the maternal ages and remove NA values:
 
 Mat_age <- ds_some_rows_v1%>%
-  select(record_id,analysis_mat_age,learn_about_study_int)%>%
+  select(record_id,analysis_mat_age,learn_about_study)%>%
   filter(!is.na(analysis_mat_age))%>%
-  filter(!is.na(learn_about_study_int))
+  filter(!is.na(learn_about_study))
   
 print(Mat_age)
 
 #create a marginal Histogram / Boxplot for maternal ages by encounter type:
-Mat_age$learn_about_study_int <- as.factor(Mat_age$learn_about_study_int)
+Mat_age$learn_about_study <- as.factor(Mat_age$learn_about_study)
 
     library(ggplot2)
   theme_set(theme_classic())
   
   # Plot
-  g <- ggplot(Mat_age, aes(learn_about_study_int, analysis_mat_age))
+  g <- ggplot(Mat_age, aes(learn_about_study, analysis_mat_age))
   g + geom_boxplot(varwidth=T, fill="plum") + 
       labs(title="Age of Participants", 
            subtitle="Divided into how they heard of the study",
@@ -390,12 +396,12 @@ g + geom_bar(stat="identity", width = 0.5) + geom_text(aes(label=count),vjust=-0
 ###Education Level of participants
 ```{r, echo=FALSE, fig.cap="Fig3.Education"}
 Education <- ds_some_rows_v1%>%
-  select(record_id,mom3t_education_2)%>%
-  filter(!is.na(mom3t_education_2))%>%
-  group_by(mom3t_education_2)%>%
+  select(record_id,education_level)%>%
+  filter(!is.na(education_level))%>%
+  group_by(education_level)%>%
   summarise(count=n())
 
-g <- ggplot(Education, aes(mom3t_education_2, count))
+g <- ggplot(Education, aes(education_level, count))
 g + geom_bar(stat="identity", width = 0.5, fill="tomato2") + 
       labs(title="Education level of participants", 
            subtitle="Catagorized by How Participant Heard of Study", 
@@ -405,10 +411,10 @@ g + geom_bar(stat="identity", width = 0.5, fill="tomato2") +
 
 
 Education_encounter <- ds_some_rows_v1%>%
-  select(record_id,mom3t_education_2,learn_about_study_int)%>%
-  filter(!is.na(mom3t_education_2))%>%
-  filter(!is.na(learn_about_study_int))%>%
-  group_by(mom3t_education_2,learn_about_study_int)%>%
+  select(record_id,education_level,learn_about_study)%>%
+  filter(!is.na(education_level))%>%
+  filter(!is.na(learn_about_study))%>%
+  group_by(education_level,learn_about_study)%>%
   summarise(count=n())
 
 
@@ -416,8 +422,8 @@ Education_encounter <- ds_some_rows_v1%>%
 theme_set(theme_classic())
 
 # distribution of visits each month(histogram)
-h <- ggplot(Education_encounter, aes(learn_about_study_int, count)) + scale_fill_brewer(palette = "Spectral")
-h + geom_histogram(aes(fill=factor(mom3t_education_2)), stat = "Identity",
+h <- ggplot(Education_encounter, aes(learn_about_study, count)) + scale_fill_brewer(palette = "Spectral")
+h + geom_histogram(aes(fill=factor(education_level)), stat = "Identity",
                    bins=24,
                    col="black", 
                    size=.1) + # change number of bins
@@ -431,16 +437,25 @@ h + geom_histogram(aes(fill=factor(mom3t_education_2)), stat = "Identity",
   theme(axis.text.x = element_text(angle=70, vjust =.6))
 ```
 
+###Income Breakdown
+```{r, echo=FALSE,fig.cap="fig4.Income"}
+income_level <- ds_some_rows_v1%>%
+  select(income,record_id,learn_about_study)%>%
+  
 
-```{r, echo=FALSE, fig.cap="fig4.Birth/pregnant"}
+```
+
+
+###Preganent and Nonpregnant Participant Breakdown
+```{r, echo=FALSE, fig.cap="fig6.Birth/pregnant"}
 A_Preg <- ds_some_rows_v1%>%
-  select(record_id,learn_about_study_int)%>%
+  select(record_id,learn_about_study)%>%
   slice(57:84)%>%
-  group_by(learn_about_study_int)%>%
+  group_by(learn_about_study)%>%
   summarise(count=n())
 print(A_Preg)
 
-g <- ggplot(A_Preg, aes(learn_about_study_int, count))
+g <- ggplot(A_Preg, aes(learn_about_study, count))
 g + geom_bar(stat="identity", width = 0.5, fill="tomato2") + 
       labs(title="How Participant After Birth heard of our study", 
            subtitle="only consented participnats", 
@@ -449,13 +464,13 @@ g + geom_bar(stat="identity", width = 0.5, fill="tomato2") +
       theme(axis.text.x = element_text(angle=65, vjust=0.6)) 
 
 C_Preg <- ds_some_rows_v1%>%
-  select(record_id,learn_about_study_int)%>%
+  select(record_id,learn_about_study)%>%
   slice(85:103)%>%
-  group_by(learn_about_study_int)%>%
+  group_by(learn_about_study)%>%
   summarise(count=n())
 print(C_Preg)
 
-g <- ggplot(C_Preg, aes(learn_about_study_int, count))
+g <- ggplot(C_Preg, aes(learn_about_study, count))
 g + geom_bar(stat="identity", width = 0.5, fill="tomato2") + 
       labs(title="how pregnant participants heard of our study", 
            subtitle="only consented participants", 
