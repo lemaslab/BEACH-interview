@@ -439,9 +439,49 @@ h + geom_histogram(aes(fill=factor(education_level)), stat = "Identity",
 
 ###Income Breakdown
 ```{r, echo=FALSE,fig.cap="fig4.Income"}
+
+#total income levels of participants 
 income_level <- ds_some_rows_v1%>%
   select(income,record_id,learn_about_study)%>%
-  
+  filter(!is.na(income))%>%
+  filter(!is.na(learn_about_study))%>%
+  group_by(income)%>%
+  summarise(count=n())
+
+
+
+g <- ggplot(income_level, aes(income, count))
+g + geom_bar(stat="identity", width = 0.5, fill="tomato2") + 
+      labs(title="Income levels of Participants", 
+           caption="Source: BEACH Interview study") +
+  geom_text(aes(label=count),vjust=0.9) +
+      theme(axis.text.x = element_text(angle=65, vjust=0.6)) 
+
+
+#Histogram of income levels of participants 
+income_level <- ds_some_rows_v1%>%
+  select(income,record_id,learn_about_study)%>%
+  filter(!is.na(income))%>%
+  filter(!is.na(learn_about_study))%>%
+  group_by(income,learn_about_study)%>%
+  summarise(count=n())
+
+theme_set(theme_classic())
+
+# distribution of visits each month(histogram)
+h <- ggplot(income_level, aes(learn_about_study, count)) + scale_fill_brewer(palette = "Spectral")
+h + geom_histogram(aes(fill=factor(income)), stat = "Identity",
+                   bins=24,
+                   col="black", 
+                   size=.1) + # change number of bins
+  # geom_density() + #this function is meant to draw a trend line for the graph
+  #geom_text(aes(y=count,label=count), colour="black") +   # this will display the total count of each bin
+  labs(title="Income Levels of Participants Per Encounters", 
+       subtitle="from july of 2017-January 2019",
+       x="encounter type",
+       y="Count",
+       fill="Income Level") +
+  theme(axis.text.x = element_text(angle=70, vjust =.6))
 
 ```
 
