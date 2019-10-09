@@ -20,7 +20,7 @@ library(keyringr)
 library(redcapAPI)
 library(REDCapR)
 library(lubridate)
-
+library(formattable)
 
 # **************************************************************************** #
 # ***************  Pull data from redcap with api                                              
@@ -94,7 +94,9 @@ ds_some_rows_v1=ds_some_rows_v1 %>%
     mutate(learn_about_study = recode(learn_about_study_int, "1"="Flyer","3"="Facebook","5"="Other"))%>%
   mutate(education_level = recode(mom3t_education_2,"1"="8th grade or less","2"="some high school","3"="high school diploma/GED","4"="some college or community college","5"="Associates degree","6"="completed tech or vocational school","7"="college graduate","8"="some graduate or professional school","9"="Graduate or professional degree"))%>%
   mutate(previous_kids = recode(analysis_kids_previous, "1"="yes","0"="no"))%>%
-  mutate(income = recode(analysis_income, "1"="$0-$15,000","2"="$15,001-$19,000","3"="$19,001-$37,000","4"="$37,001-$44,000","5"="$44,001-$52,000","6"="$52,001-$56,000","7"="$56,001-$67,000","8"="$67,001-$79,000","9"="$79,001 or more"))
+  mutate(income = recode(analysis_income, "1"="$0-$15,000","2"="$15,001-$19,000","3"="$19,001-$37,000","4"="$37,001-$44,000","5"="$44,001-$52,000","6"="$52,001-$56,000","7"="$56,001-$67,000","8"="$67,001-$79,000","9"="$79,001 or more"))%>%
+  mutate(phone_pass_fail = recode(int_phone_pass_fail, "1"="pass","0"="fail"))%>%
+  mutate(consent_complete = recode(int_consent_complete, "1"="Consented","0"="not Concented"))
 
 ```
 
@@ -107,12 +109,12 @@ Totals <- ds_some_rows_v1%>%
   summarize(count=n())%>%
   rename("how did you hear about us?"=learn_about_study)
 
-cat(Totals)
+formattable(Totals, align =c("l","r"))
 ```
 
 ##Encounters Over Time
 ###Total Encounters
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.cap= "Fig2: Encounters over time"}
 Encounter_per_Time <- ds_some_rows_v1%>%
   separate(encounter_date_int,c("y","m","d"))%>%
   group_by(learn_about_study,m,y)%>%
@@ -138,19 +140,19 @@ h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
 
 ```
 ###Passed Participants
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.cap= "Fig3: encounters that passed phone screening over time"}
 # provides the number of total passed participants per month per encounter type(how they learned about our study) 
 total_pass <- ds_some_rows_v1%>%
-  select(int_phone_pass_fail,learn_about_study,encounter_date_int)%>%
+  select(phone_pass_fail,learn_about_study,encounter_date_int)%>%
   separate(encounter_date_int,c("y","m","d"))%>%
-  filter(int_phone_pass_fail==1)%>%
-  group_by(m,y,int_phone_pass_fail,learn_about_study)%>%
+  filter(phone_pass_fail=="pass")%>%
+  group_by(m,y,phone_pass_fail,learn_about_study)%>%
   summarize(count=n())%>%
   unite("YM",c("y","m"),sep ="-")
 
-print(total_pass)
 
-t <- ggplot(total_pass, aes(YM, count, int_phone_pass_fail)) + scale_fill_brewer(palette = "Spectral")
+
+t <- ggplot(total_pass, aes(YM, count, phone_pass_fail)) + scale_fill_brewer(palette = "Spectral")
 t + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
                    bins=24,
                    col="black", 
@@ -163,37 +165,40 @@ t + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
        y="Count",
        fill="How did you learn about the study") +
   theme(axis.text.x = element_text(angle=70, vjust =.6))
+
+formattable(total_pass, align=c("l","c","c","r"))
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.cap= "Fig4: Facebook Participants Passed per Month"}
 # Display the number of participants that passed the screening each month for Social Media
 social_pass <- ds_some_rows_v1%>%
-  select(int_phone_pass_fail,learn_about_study,encounter_date_int)%>%
+  select(phone_pass_fail,learn_about_study,encounter_date_int)%>%
   separate(encounter_date_int,c("y","m","d"))%>%
-  filter(learn_about_study=="Facebook", int_phone_pass_fail==1)%>%
-  group_by(m,y,int_phone_pass_fail)%>%
+  filter(learn_about_study=="Facebook", phone_pass_fail=="pass")%>%
+  group_by(m,y,phone_pass_fail)%>%
   summarize(count=n())%>%
   unite("YM",c("y","m"),sep ="-")
 
-print(social_pass)
-
 g <- ggplot(social_pass, aes(YM, count))
 g + geom_bar(stat="identity", width = 0.5, fill="tomato2") + 
-  labs(title="Social Media Pass participants", 
+  labs(title="Facebook Pass participants per Month", 
        x="Date(Year-Month)",
        y="count") +
   theme(axis.text.x = element_text(angle=65, vjust=0.6))
 
+formattable(social_pass, align=c("l","c","r"))
+```
+
+```{r, echo=FALSE, fig.cap= "Fig5: Flyer Participants that Passed per Month"}
 # Display the number of participants that passed the screening each month for Flyers
 flyer_pass <- ds_some_rows_v1%>%
-  select(int_phone_pass_fail,learn_about_study,encounter_date_int)%>%
+  select(phone_pass_fail,learn_about_study,encounter_date_int)%>%
   separate(encounter_date_int,c("y","m","d"))%>%
-  filter(learn_about_study=="Flyer", int_phone_pass_fail==1)%>%
-  group_by(m,y,int_phone_pass_fail)%>%
+  filter(learn_about_study=="Flyer", phone_pass_fail=="pass")%>%
+  group_by(m,y,phone_pass_fail)%>%
   summarize(count=n())%>%
   unite("YM",c("y","m"),sep ="-")
 
-print(flyer_pass)
 
 g <- ggplot(flyer_pass, aes(YM, count))
 g + geom_bar(stat="identity", width = 0.5, fill="tomato2") + 
@@ -202,20 +207,21 @@ g + geom_bar(stat="identity", width = 0.5, fill="tomato2") +
        y="count") +
   theme(axis.text.x = element_text(angle=65, vjust=0.6))
 
-
+formattable(flyer_pass, align=c("l","c","r"))
 
 ```
 
 
 ##Figures of Encounters with Consented Participants
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.cap= "Fig6: Consented Participants Over Time"}
 # Provides a filter to the data to view how particpnats heard about the study AND consented. Showed greater favor for Facebook recruitment.
 
 Consent_per_Time <- ds_some_rows_v1%>%
+  select(encounter_date_int,learn_about_study, consent_complete)%>%
   separate(encounter_date_int,c("y","m","d"))%>%
-  filter(int_consent_complete==1)%>%
-  group_by(learn_about_study_int,m,y)%>%
+  filter(consent_complete=="Consented")%>%
+  group_by(learn_about_study,m,y)%>%
   summarize(count=n())%>%
   unite("YM",c("y","m"),sep ="-")
 
@@ -224,7 +230,7 @@ theme_set(theme_classic())
 
 # distribution of visits each month(histogram)
 h <- ggplot(Consent_per_Time, aes(YM, count)) + scale_fill_brewer(palette = "Spectral")
-h + geom_histogram(aes(fill=factor(learn_about_study_int)), stat = "Identity",
+h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
                    bins=24,
                    col="black", 
                    size=.1) + # change number of bins
@@ -238,18 +244,23 @@ h + geom_histogram(aes(fill=factor(learn_about_study_int)), stat = "Identity",
        fill="How did you learn about the study") +
   theme(axis.text.x = element_text(angle=70, vjust =.6))
 
+formattable(Consent_per_Time,align=c("l","c","r"))
+```
+
+```{r,echo=FALSE, fig.cap="Fig7: Consented Flyer Participants Over Time"}
 
 # Display the number of participants that passed the consent each month, Flyers
 
 flyer_pass_consent <- ds_some_rows_v1%>%
-  select(learn_about_study_int,encounter_date_int,int_consent_complete)%>%
+  select(learn_about_study,encounter_date_int,consent_complete)%>%
   separate(encounter_date_int,c("y","m","d"))%>%
-  filter(learn_about_study_int==1, int_consent_complete==1)%>%
-  group_by(m,y,int_consent_complete)%>%
+  filter(learn_about_study=="Flyer",
+         consent_complete=="Consented")%>%
+  group_by(m,y,consent_complete)%>%
   summarize(count=n())%>%
   unite("YM",c("y","m"),sep ="-")
 
-print(flyer_pass_consent)
+
 
 g <- ggplot(flyer_pass_consent, aes(YM, count))
 g + geom_bar(stat="identity", width = 0.5, fill="tomato2") + 
@@ -258,17 +269,19 @@ g + geom_bar(stat="identity", width = 0.5, fill="tomato2") +
        y="count") +
   theme(axis.text.x = element_text(angle=65, vjust=0.6))
 
+formattable(flyer_pass_consent,asign=c("l","c","r"))
+```
 
+```{r, echo=FALSE, fig.cap="Fig8:Facebook Consented Particiapnts Over Time"}
 # Display the number of participants that consented each month for Social Media
 social_pass_consent <- ds_some_rows_v1%>%
-  select(int_consent_complete,learn_about_study_int,encounter_date_int)%>%
+  select(consent_complete,learn_about_study,encounter_date_int)%>%
   separate(encounter_date_int,c("y","m","d"))%>%
-  filter(learn_about_study_int==3, int_consent_complete==1)%>%
-  group_by(m,y,int_consent_complete)%>%
+  filter(learn_about_study=="Facebook",
+         consent_complete=="Consented")%>%
+  group_by(m,y,consent_complete)%>%
   summarize(count=n())%>%
   unite("YM",c("y","m"),sep ="-")
-
-print(social_pass_consent)
 
 g <- ggplot(social_pass_consent, aes(YM, count))
 g + geom_bar(stat="identity", width = 0.5, fill="tomato2") + 
@@ -277,6 +290,7 @@ g + geom_bar(stat="identity", width = 0.5, fill="tomato2") +
        y="count") +
   theme(axis.text.x = element_text(angle=65, vjust=0.6))
 
+formattable(social_pass_consent,asign=c("l","c","r"))
 
 ```
 
@@ -284,7 +298,7 @@ g + geom_bar(stat="identity", width = 0.5, fill="tomato2") +
 ##demographics
 
 ###Maternal Age of participants
-```{r, echo=FALSE ,fig.cap= "Fig1: test"}
+```{r, echo=FALSE ,fig.cap= "Fig9: Participant Age"}
 #select all the maternal ages and remove NA values:
 
 Mat_age <- ds_some_rows_v1%>%
@@ -292,7 +306,6 @@ Mat_age <- ds_some_rows_v1%>%
   filter(!is.na(analysis_mat_age))%>%
   filter(!is.na(learn_about_study))
   
-print(Mat_age)
 
 #create a marginal Histogram / Boxplot for maternal ages by encounter type:
 Mat_age$learn_about_study <- as.factor(Mat_age$learn_about_study)
@@ -309,58 +322,61 @@ Mat_age$learn_about_study <- as.factor(Mat_age$learn_about_study)
            x="How did you hear of our study",
            y="Age(years)")
   
+formattable(Mat_age,asign=c("l","c","r"))
 ```
   
   
 ###BMI of Participants
-```{r, echo=FALSE, fig.cap="Fig2:BMI"}
-  #Determining the average BMI per enocunter type.  
+```{r, echo=FALSE, fig.cap="Fig10:BMI"}
+  #Determining the average BMI per enocunter type.
 Pre_BMI <- ds_some_rows_v1%>%
-  select(record_id,analysis_bmi,learn_about_study_int)%>%
+  select(record_id,analysis_bmi,learn_about_study)%>%
   filter(!is.na(analysis_bmi))%>%
-  filter(!is.na(learn_about_study_int))
+  filter(!is.na(learn_about_study))
   
-print(Pre_BMI)
+
 
 #create a marginal Histogram / Boxplot for maternal ages by encounter type:
-Pre_BMI$learn_about_study_int <- as.factor(Pre_BMI$learn_about_study_int)
+Pre_BMI$learn_about_study <- as.factor(Pre_BMI$learn_about_study)
 
     library(ggplot2)
   theme_set(theme_classic())
   
   # Plot
-  g <- ggplot(Pre_BMI, aes(learn_about_study_int, analysis_bmi))
+  g <- ggplot(Pre_BMI, aes(learn_about_study, analysis_bmi))
   g + geom_boxplot(varwidth=T, fill="plum") + 
       labs(title="BMI of participants", 
            subtitle="Divided into how they heard of the study",
            caption="Source: BEACH Interview",
            x="How did you hear of our study",
            y="BMI")
-  
+
+formattable(Pre_BMI,asign=c("l","c","r"))
+
   #Presenting amount of participnats per encounter per BMI catagories
 Pre_BMI_L25 <- ds_some_rows_v1%>%
-  select(record_id,analysis_bmi,learn_about_study_int)%>%
+  select(record_id,analysis_bmi,learn_about_study)%>%
   filter(!is.na(analysis_bmi))%>%
-  filter(!is.na(learn_about_study_int))%>%
+  filter(!is.na(learn_about_study))%>%
   filter(analysis_bmi<25)%>%
-  group_by(learn_about_study_int, analysis_bmi)%>%
+  group_by(learn_about_study, analysis_bmi)%>%
   summarise(count=n())
 
 Pre_BMI_between <- ds_some_rows_v1%>%
-  select(record_id,analysis_bmi,learn_about_study_int)%>%
+  select(record_id,analysis_bmi,learn_about_study)%>%
   filter(!is.na(analysis_bmi))%>%
-  filter(!is.na(learn_about_study_int))%>%
+  filter(!is.na(learn_about_study))%>%
   filter(analysis_bmi>25 & analysis_bmi<30)%>%
-  group_by(learn_about_study_int, analysis_bmi)%>%
+  group_by(learn_about_study, analysis_bmi)%>%
   summarise(count=n())
 
 
 Pre_BMI_H30 <- ds_some_rows_v1%>%
-  select(record_id,analysis_bmi,learn_about_study_int)%>%
+  select(record_id,analysis_bmi,learn_about_study)%>%
   filter(!is.na(analysis_bmi))%>%
-  filter(!is.na(learn_about_study_int))%>%
+  filter(!is.na(learn_about_study))%>%
   filter(analysis_bmi>30)%>%
-  group_by(learn_about_study_int, analysis_bmi)%>%
+  group_by(learn_about_study, analysis_bmi)%>%
   summarise(count=n())
 
 
@@ -368,23 +384,29 @@ Pre_BMI_H30 <- ds_some_rows_v1%>%
 
 
 
-g <- ggplot(Pre_BMI_L25, aes(x=learn_about_study_int,y=count,fill=analysis_bmi))
+g <- ggplot(Pre_BMI_L25, aes(x=learn_about_study,y=count,fill=analysis_bmi))
 g + geom_bar(stat="identity", width = 0.5) + geom_text(aes(label=count),vjust=-0.2) + 
       labs(title="Distribution of participants with BMI<25", 
            subtitle="Catagorized by How Particiapnt Heard of Study", 
            caption="Source: BEACH Interview study") 
 
-g <- ggplot(Pre_BMI_between, aes(x=learn_about_study_int,y=count,fill=analysis_bmi))
+formattable(Pre_BMI_L25,asign=c("l","c","r"))
+
+g <- ggplot(Pre_BMI_between, aes(x=learn_about_study,y=count,fill=analysis_bmi))
 g + geom_bar(stat="identity", width = 0.5) + geom_text(aes(label=count),vjust=-0.2) + 
       labs(title="Distribution of participants with BMI between 25 and 30", 
            subtitle="Catagorized by How Particiapnt Heard of Study", 
            caption="Source: BEACH Interview study") 
 
-g <- ggplot(Pre_BMI_H30, aes(x=learn_about_study_int,y=count,fill=analysis_bmi))
+formattable(Pre_BMI_between,asign=c("l","c","r"))
+
+g <- ggplot(Pre_BMI_H30, aes(x=learn_about_study,y=count,fill=analysis_bmi))
 g + geom_bar(stat="identity", width = 0.5) + geom_text(aes(label=count),vjust=-0.2) + 
       labs(title="Distribution of participants with BMI>30", 
            subtitle="Catagorized by How Particiapnt Heard of Study", 
            caption="Source: BEACH Interview study") 
+
+formattable(Pre_BMI_H30,asign=c("l","c","r"))
 
 #Level of education between participants
 ```
