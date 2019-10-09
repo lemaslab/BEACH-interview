@@ -100,14 +100,14 @@ ds_some_rows_v1=ds_some_rows_v1 %>%
 
 
 ## Figures Plots of Total Encounters
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.cap= "Fig1: total encounters"}
 Totals <- ds_some_rows_v1%>%
   select(learn_about_study)%>%
   group_by(learn_about_study)%>%
   summarize(count=n())%>%
   rename("how did you hear about us?"=learn_about_study)
 
-print(Totals)
+cat(Totals)
 ```
 
 ##Encounters Over Time
