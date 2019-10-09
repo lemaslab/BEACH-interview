@@ -96,7 +96,7 @@ ds_some_rows_v1=ds_some_rows_v1 %>%
   mutate(previous_kids = recode(analysis_kids_previous, "1"="yes","0"="no"))%>%
   mutate(income = recode(analysis_income, "1"="$0-$15,000","2"="$15,001-$19,000","3"="$19,001-$37,000","4"="$37,001-$44,000","5"="$44,001-$52,000","6"="$52,001-$56,000","7"="$56,001-$67,000","8"="$67,001-$79,000","9"="$79,001 or more"))%>%
   mutate(phone_pass_fail = recode(int_phone_pass_fail, "1"="pass","0"="fail"))%>%
-  mutate(consent_complete = recode(int_consent_complete, "1"="Consented","0"="not Concented"))
+  mutate(consent_complete = recode(int_consent_complete, "1"="Consented","0"="not Consented"))
 
 ```
 
@@ -412,7 +412,7 @@ formattable(Pre_BMI_H30,asign=c("l","c","r"))
 ```
 
 ###Education Level of participants
-```{r, echo=FALSE, fig.cap="Fig3.Education"}
+```{r, echo=FALSE, fig.cap="Fig11.Education"}
 Education <- ds_some_rows_v1%>%
   select(record_id,education_level)%>%
   filter(!is.na(education_level))%>%
@@ -427,6 +427,7 @@ g + geom_bar(stat="identity", width = 0.5, fill="tomato2") +
   geom_text(aes(label=count),vjust=-0.2) +
       theme(axis.text.x = element_text(angle=65, vjust=0.6)) 
 
+formattable(Education, asign=c("l","c","r"))
 
 Education_encounter <- ds_some_rows_v1%>%
   select(record_id,education_level,learn_about_study)%>%
@@ -453,10 +454,13 @@ h + geom_histogram(aes(fill=factor(education_level)), stat = "Identity",
        y="Count",
        fill="level of education") +
   theme(axis.text.x = element_text(angle=70, vjust =.6))
+
+formattable(Education_encounter, asign=c("l","c","c","r"))
+
 ```
 
 ###Income Breakdown
-```{r, echo=FALSE,fig.cap="fig4.Income"}
+```{r, echo=FALSE,fig.cap="Fig12.Income"}
 
 #total income levels of participants 
 income_level <- ds_some_rows_v1%>%
@@ -466,8 +470,6 @@ income_level <- ds_some_rows_v1%>%
   group_by(income)%>%
   summarise(count=n())
 
-
-
 g <- ggplot(income_level, aes(income, count))
 g + geom_bar(stat="identity", width = 0.5, fill="tomato2") + 
       labs(title="Income levels of Participants", 
@@ -475,6 +477,7 @@ g + geom_bar(stat="identity", width = 0.5, fill="tomato2") +
   geom_text(aes(label=count),vjust=0.9) +
       theme(axis.text.x = element_text(angle=65, vjust=0.6)) 
 
+formattable(income_level, asign=c("l","c","c","r"))
 
 #Histogram of income levels of participants 
 income_level <- ds_some_rows_v1%>%
@@ -501,10 +504,11 @@ h + geom_histogram(aes(fill=factor(income)), stat = "Identity",
        fill="Income Level") +
   theme(axis.text.x = element_text(angle=70, vjust =.6))
 
+formattable(income_level, asign=c("l","c","c","r"))
 ```
 
 ###Previous births
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.cap="Fig13.Previous Birth Information"}
 previous_births <- ds_some_rows_v1%>%
   select(record_id,previous_kids,learn_about_study)%>%
   filter(!is.na(previous_kids))%>%
@@ -518,6 +522,7 @@ g + geom_bar(stat="identity", width = 0.5, fill="tomato2") +
   geom_text(aes(label=count),vjust=0.9) +
       theme(axis.text.x = element_text(angle=65, vjust=0.6)) 
 
+formattable(previous_births, asign=c("l","r"))
 
 previous_births <- ds_some_rows_v1%>%
   select(learn_about_study,record_id,previous_kids)%>%
@@ -533,18 +538,19 @@ g + geom_bar(stat="identity", width = 0.5) + geom_text(aes(label=count),vjust=-0
            subtitle="Did participant have a previous birth", 
            caption="Source: BEACH Interview study") 
 
+formattable(previous_births, asign=c("l","c","r"))
 
 ```
 
 
 ###Preganent and Nonpregnant Participant Breakdown
-```{r, echo=FALSE, fig.cap="fig6.Birth/pregnant"}
+```{r, echo=FALSE, fig.cap="Fig14.Birth/pregnant"}
 A_Preg <- ds_some_rows_v1%>%
   select(record_id,learn_about_study)%>%
   slice(57:84)%>%
   group_by(learn_about_study)%>%
   summarise(count=n())
-print(A_Preg)
+
 
 g <- ggplot(A_Preg, aes(learn_about_study, count))
 g + geom_bar(stat="identity", width = 0.5, fill="tomato2") + 
@@ -554,12 +560,13 @@ g + geom_bar(stat="identity", width = 0.5, fill="tomato2") +
   geom_text(aes(label=count),vjust=-0.2) +
       theme(axis.text.x = element_text(angle=65, vjust=0.6)) 
 
+formattable(A_Preg, asign=c("l","r"))
+
 C_Preg <- ds_some_rows_v1%>%
   select(record_id,learn_about_study)%>%
   slice(85:103)%>%
   group_by(learn_about_study)%>%
   summarise(count=n())
-print(C_Preg)
 
 g <- ggplot(C_Preg, aes(learn_about_study, count))
 g + geom_bar(stat="identity", width = 0.5, fill="tomato2") + 
@@ -568,10 +575,13 @@ g + geom_bar(stat="identity", width = 0.5, fill="tomato2") +
            caption="Source: BEACH Interview study") +
   geom_text(aes(label=count),vjust=-0.2) +
       theme(axis.text.x = element_text(angle=65, vjust=0.6)) 
+
+formattable(C_Preg,asign=c("l","r"))
+
 ```
 
 ##Reviewing encounters without time
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.cap="Fig15.Encounter independent of time"}
 encounters <- ds_some_rows_v1%>%
   select(learn_about_study_int)%>%
   filter(!is.na(learn_about_study_int))%>%
@@ -588,14 +598,14 @@ g + geom_bar(stat="identity", width = 0.5, fill="tomato2") +
 
 
 encounters_consent <- ds_some_rows_v1%>%
-  select(learn_about_study_int,int_consent_complete)%>%
-  filter(!is.na(learn_about_study_int))%>%
-  replace_na(int_consent_complete=0)%>%
-  group_by(learn_about_study_int, int_consent_complete)%>%
+  select(learn_about_study,consent_complete)%>%
+  filter(!is.na(learn_about_study))%>%
+  replace_na(consent_complete="not Consented")%>%
+  group_by(learn_about_study, consent_complete)%>%
   summarise(count=n())
 
 
-g <- ggplot(encounters_consent, aes(x=learn_about_study_int,y=count,fill=int_consent_complete))
+g <- ggplot(encounters_consent, aes(x=learn_about_study,y=count,fill=consent_complete))
 g + geom_bar(stat="identity", width = 0.5) + geom_text(aes(label=count),vjust=-0.2) + 
       labs(title="total of how participant learned about study", 
            subtitle="concented and nonconsented", 
