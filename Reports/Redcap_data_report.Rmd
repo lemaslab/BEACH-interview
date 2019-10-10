@@ -2,12 +2,16 @@
 title: "Redcap Data report"
 author: "Luran M."
 date: "September 5, 2019"
-output: 
+output:
   html_document:
-    theme: spacelab
     highlight: tango
-    toc: true
-    toc_float: true
+    theme: spacelab
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
 ---
 
 
