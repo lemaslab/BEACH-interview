@@ -121,6 +121,17 @@ Encounter_per_Time <- ds_some_rows_v1%>%
   summarize(count=n())%>%
   unite("YM",c("y","m"),sep ="-")
     
+    #testing to add missing dates
+#ts <- seq.POSIXt(as.POSIXct("2018-01-01 0:00",'%y/%m/%d #%H:%M'), as.POSIXct("2019-04-01 0:0",'%y/%m/%d %H:%M'), #by="min")
+#
+#ts <- format.POSIXct(ts,'%y/%m/%d %H:%M')
+#
+#df <- data.frame(timestamp=ts)
+#
+#data_with_missing_times <- full_join(df,Encounter_per_Time, #by="YM")
+#
+
+
 theme_set(theme_classic())
 
 # distribution of visits each month(histogram)
@@ -138,6 +149,8 @@ h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
        fill="How did you learn about the study") +
   theme(axis.text.x = element_text(angle=70, vjust =.6))
 
+
+formattable(Encounter_per_Time,align=c("l","c","c","r"))
 ```
 ###Passed Participants
 ```{r, echo=FALSE, fig.cap= "Fig3: encounters that passed phone screening over time"}
