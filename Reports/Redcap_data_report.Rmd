@@ -43,7 +43,7 @@ rcon <- redcapConnection(url=uri, token=beach_token)
 
 
 # crc variables
-fields <- exportFieldNames(rcon)
+
 desired_fields <- c("record_id","int_phone_pass_fail","encounter_date_int","encounter_type_int",
 "beach_interview_study_encounters_complete",
 "learn_about_study_int","int_consent_complete",
@@ -52,17 +52,15 @@ desired_fields <- c("record_id","int_phone_pass_fail","encounter_date_int","enco
 
 
 # events to retain
-exportEvents(rcon)
+
 events_to_retain  <- c("beach_interview_phone_screen","beach_interview_study_encounters")
 
 # list of events
-exportEvents(rcon)
 
 # list records
 #exportRecords(rcon)  I don't know why having this in a report is an issue
 
 # export field names
-exportFieldNames(rcon)
 
 # consented records
 consent.records.v1=c("BIS001A","BIS002A","BIS003A","BIS004A","BIS005A",
@@ -125,6 +123,10 @@ Encounter_per_Time <- ds_some_rows_v1%>%
   summarize(count=n())%>%
   unite("YM",c("y","m"),sep ="-")
     
+
+#Filler_date <- seq(min("2017-09"), max("2019-04"))
+
+
     #testing to add missing dates
 #ts <- seq.POSIXt(as.POSIXct("2018-01-01 0:00",'%y/%m/%d #%H:%M'), as.POSIXct("2019-04-01 0:0",'%y/%m/%d %H:%M'), #by="min")
 #
