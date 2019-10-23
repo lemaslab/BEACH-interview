@@ -15,7 +15,7 @@ output:
 ---
 
 
-```{r, include=FALSE}
+```{r, include=FALSE, warning=FALSE}
 
 library(tidyr)
 library(dplyr)
@@ -104,7 +104,7 @@ ds_some_rows_v1=ds_some_rows_v1 %>%
 
 
 ## Figures Plots of Total Encounters
-```{r, echo=FALSE, fig.cap= "Fig1: total encounters"}
+```{r, echo=FALSE, warning=FALSE, fig.cap= "Fig1: total encounters"}
 Totals <- ds_some_rows_v1%>%
   select(learn_about_study)%>%
   group_by(learn_about_study)%>%
@@ -116,7 +116,7 @@ formattable(Totals, align =c("l","r"))
 
 ##Encounters Over Time
 ###Total Encounters
-```{r, echo=FALSE, fig.cap= "Fig2: Encounters over time"}
+```{r, echo=FALSE, warning=FALSE, fig.cap= "Fig2: Encounters over time"}
 
 Encounter_per_time <- ds_some_rows_v1%>%
   select(encounter_date_int,learn_about_study)
@@ -625,8 +625,6 @@ g + geom_bar(stat="identity", width = 0.5) + geom_text(aes(label=count),vjust=-0
       labs(title="total of how participant learned about study", 
            subtitle="concented and nonconsented", 
            caption="Source: BEACH Interview study") 
-
-
-
-
 ```
+
+
