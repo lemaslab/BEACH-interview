@@ -117,31 +117,27 @@ formattable(Totals, align =c("l","r"))
 ##Encounters Over Time
 ###Total Encounters
 ```{r, echo=FALSE, fig.cap= "Fig2: Encounters over time"}
-Encounter_per_Time <- ds_some_rows_v1%>%
+
+Encounter_per_time <- ds_some_rows_v1%>%
+  select(encounter_date_int,learn_about_study)
+
+Encounter_per_time$encounter_date_int <- as.Date(Encounter_per_time$encounter_date_int, format= "%Y-%m-%d")
+
+my_data <- data.frame(encounter_date_int = seq(as.Date("2017-01-01"), as.Date("2019-12-31"), 
+  by = "1 month"), format= "%Y-%m-%d")
+
+my_complete <- full_join(my_data, Encounter_per_time, by = "encounter_date_int")
+
+Encounter_per_time <- my_complete%>%
   separate(encounter_date_int,c("y","m","d"))%>%
   group_by(learn_about_study,m,y)%>%
   summarize(count=n())%>%
   unite("YM",c("y","m"),sep ="-")
-    
-
-#Filler_date <- seq(min("2017-09"), max("2019-04"))
-
-
-    #testing to add missing dates
-#ts <- seq.POSIXt(as.POSIXct("2018-01-01 0:00",'%y/%m/%d #%H:%M'), as.POSIXct("2019-04-01 0:0",'%y/%m/%d %H:%M'), #by="min")
-#
-#ts <- format.POSIXct(ts,'%y/%m/%d %H:%M')
-#
-#df <- data.frame(timestamp=ts)
-#
-#data_with_missing_times <- full_join(df,Encounter_per_Time, #by="YM")
-#
 
 
 theme_set(theme_classic())
-
 # distribution of visits each month(histogram)
-h <- ggplot(Encounter_per_Time, aes(YM, count)) + scale_fill_brewer(palette = "Spectral")
+h <- ggplot(Encounter_per_time, aes(YM, count)) + scale_fill_brewer(palette = "Spectral")
 h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
                    bins=24,
                    col="black", 
@@ -156,7 +152,7 @@ h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
   theme(axis.text.x = element_text(angle=70, vjust =.6))
 
 
-formattable(Encounter_per_Time,align=c("l","c","c","r"))
+formattable(Encounter_per_time,align=c("l","c","c","r"))
 ```
 ###Passed Participants
 ```{r, echo=FALSE, fig.cap= "Fig3: encounters that passed phone screening over time"}
