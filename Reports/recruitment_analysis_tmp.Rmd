@@ -1,5 +1,5 @@
 ---
-title: "Redcap Data report"
+title: "BEACH Interview Study: Recruitment Report"
 author: "Luran M."
 date: "September 5, 2019"
 output:
@@ -8,10 +8,6 @@ output:
     theme: spacelab
     toc: yes
     toc_float: yes
-  pdf_document:
-    toc: yes
-  word_document:
-    toc: yes
 ---
 
 
@@ -26,13 +22,20 @@ library(REDCapR)
 library(lubridate)
 library(formattable)
 
+``` 
+
+```{r, include=FALSE, warning=FALSE}
+
 # **************************************************************************** #
 # ***************  Pull data from redcap with api                                              
 # **************************************************************************** # 
 
 # Get Redcap API Token
+
+# note: Luran needs to change token to : interview_api
+
 # # https://cran.r-project.org/web/packages/keyringr/vignettes/Avoiding_plain_text_passwords_in_R_with_keyringr.html
-credential_label <- "beach_interview_api"
+credential_label <- "interview_api"
 credential_path <- paste(Sys.getenv("USERPROFILE"), '\\DPAPI\\passwords\\', Sys.info()["nodename"], '\\', credential_label, '.txt', sep="")
 uri <- "https://redcap.ctsi.ufl.edu/redcap/api/"
 beach_token<-decrypt_dpapi_pw(credential_path)
@@ -41,29 +44,21 @@ print(beach_token)
 # Create connections
 rcon <- redcapConnection(url=uri, token=beach_token)
 
-
 # crc variables
-
+#--------------
 desired_fields <- c("record_id","int_phone_pass_fail","encounter_date_int","encounter_type_int",
 "beach_interview_study_encounters_complete",
 "learn_about_study_int","int_consent_complete",
 "analysis_mat_age_cats","analysis_bmi","mom3t_education_2",
 "analysis_mat_age","analysis_income","analysis_kids_previous")
 
-
 # events to retain
-
+#-----------------
 events_to_retain  <- c("beach_interview_phone_screen","beach_interview_study_encounters")
 
-# list of events
-
-# list records
-#exportRecords(rcon)  I don't know why having this in a report is an issue
-
-# export field names
-
 # consented records
-consent.records.v1=c("BIS001A","BIS002A","BIS003A","BIS004A","BIS005A",
+#------------------
+records.v1=c("BIS001A","BIS002A","BIS003A","BIS004A","BIS005A",
                      "BIS006A","BIS007A","BIS008A","BIS009A","BIS010A",
                      "BIS011A","BIS013A","BIS014A","BIS018A","BIS019A",
                      "BIS022A","BIS023A","BIS024A","BIS025A","BIS026A",
@@ -82,16 +77,19 @@ consent.records.v1=c("BIS001A","BIS002A","BIS003A","BIS004A","BIS005A",
                      "290","291","293","294","295","296","297","85","88","90")
 
 # pull data
-ds_some_rows_v1 <- redcap_read(
+recruit <- redcap_read(
   redcap_uri = uri, 
-  records= consent.records.v1,
+  records    = records.v1,
   token      = beach_token, 
   fields     = desired_fields
-  
 )$data
 
+```
+
+```{r, include=FALSE, warning=FALSE}
+
 # recode encounter type
-ds_some_rows_v1=ds_some_rows_v1 %>%
+ds_some_rows_v1=recruit %>%
   #use mutate(new column = recode(current column to be recoded, "variable in column"="new variable name"))
     mutate(learn_about_study = recode(learn_about_study_int, "1"="Flyer","3"="Facebook","5"="Other"))%>%
   mutate(education_level = recode(mom3t_education_2,"1"="8th grade or less","2"="some high school","3"="high school diploma/GED","4"="some college or community college","5"="Associates degree","6"="completed tech or vocational school","7"="college graduate","8"="some graduate or professional school","9"="Graduate or professional degree"))%>%
@@ -101,6 +99,8 @@ ds_some_rows_v1=ds_some_rows_v1 %>%
   mutate(consent_complete = recode(int_consent_complete, "1"="Consented","0"="not Consented"))
 
 ```
+
+
 
 
 ## Figures Plots of Total Encounters
