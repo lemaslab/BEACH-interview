@@ -104,11 +104,23 @@ ds_some_rows_v1=recruit %>%
 
 ```
 
-# Demographics According to Recrutiment Type
+## Encounters Summary
+```{r, echo=FALSE, warning=FALSE, fig.cap= "Fig1: total encounters"}
+Totals <- ds_some_rows_v1%>%
+  select(learn_about_study)%>%
+  group_by(learn_about_study)%>%
+  summarize(count=n())%>%
+  rename("how did you hear about us?"=learn_about_study)
+
+formattable(Totals, align =c("l","r"))
+```
+
+
+# ALL Encounters 
 
 We are interested in looking at demographics of `r length(ds_some_rows_v1$record_id)` observations according to recrtuitment type. Based on results in Figure 1- we found that  
 
-###Figure 1: Maternal Age 
+### Figure 1.1: Maternal Age 
 ```{r, echo=FALSE}
 #select all the maternal ages and remove NA values:
 
@@ -136,7 +148,7 @@ Mat_age$learn_about_study <- as.factor(Mat_age$learn_about_study)
 #formattable(Mat_age,asign=c("l","c","r"))
 ```
 
-###Figure 2: Maternal BMI 
+### Figure 1.2: Maternal BMI 
 ```{r, echo=FALSE}
   #Determining the average BMI per enocunter type.
 Pre_BMI <- ds_some_rows_v1%>%
@@ -160,4 +172,65 @@ Pre_BMI$learn_about_study <- as.factor(Pre_BMI$learn_about_study)
 #formattable(Pre_BMI,asign=c("l","c","r"))
 ```
 
-# Demographics According to Recrutiment Type
+### Figure 1.3: Study Duration
+```{r, echo=FALSE, warning=FALSE}
+
+Encounter_per_time <- ds_some_rows_v1%>%
+  select(encounter_date_int,learn_about_study)
+
+Encounter_per_time$encounter_date_int <- as.Date(Encounter_per_time$encounter_date_int, format= "%Y-%m-%d")
+
+my_data <- data.frame(encounter_date_int = seq(as.Date("2017-01-01"), as.Date("2019-12-31"), 
+  by = "1 month"), format= "%Y-%m-%d")
+
+my_complete <- full_join(my_data, Encounter_per_time, by = "encounter_date_int")
+
+Encounter_per_time <- my_complete%>%
+  separate(encounter_date_int,c("y","m","d"))%>%
+  group_by(learn_about_study,m,y)%>%
+  summarize(count=n())%>%
+  unite("YM",c("y","m"),sep ="-")
+
+
+theme_set(theme_classic())
+# distribution of visits each month(histogram)
+h <- ggplot(Encounter_per_time, aes(YM, count)) + scale_fill_brewer(palette = "Spectral")
+h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
+                   bins=24,
+                   col="black", 
+                   size=.1) + # change number of bins
+  # geom_density() + #this function is meant to draw a trend line for the graph
+  # stat_bin(aes(y=count,label=count),geom="text",vjust=-.5) +   # this will display the total count of each bin
+  labs(x="Date(Year-Month)",
+       y="Count",
+       fill="How did you learn about the study") +
+  theme(axis.text.x = element_text(angle=70, vjust =.6))
+
+
+#formattable(Encounter_per_time,align=c("l","c","c","r"))
+```
+
+
+# Phone Screened Encounters
+
+### Figure 2.1: Maternal Age 
+
+### Figure 2.2: Maternal BMI 
+
+### Figure 2.3: Study Duration
+
+# PASS Phone Screen
+
+### Figure 3.1: Maternal Age 
+
+### Figure 3.2: Maternal BMI 
+
+### Figure 3.3: Study Duration
+
+# Consented Participants
+
+### Figure 4.1: Maternal Age 
+
+### Figure 4.2: Maternal BMI 
+
+### Figure 4.3: Study Duration
