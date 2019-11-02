@@ -135,10 +135,9 @@ Mat_age <- ds_some_rows_v1%>%
 #create a marginal Histogram / Boxplot for maternal ages by encounter type:
 Mat_age$learn_about_study <- as.factor(Mat_age$learn_about_study)
 
-    library(ggplot2)
+
   theme_set(theme_classic())
-  
-  # Plot
+# Plot
   g <- ggplot(Mat_age, aes(learn_about_study, analysis_mat_age))
   g + geom_boxplot(varwidth=T, fill="plum") + 
       labs(caption="Source: BEACH Interview",
@@ -237,6 +236,14 @@ Mat_bmi <- ds_some_rows_v1%>%
   filter(!is.na(analysis_mat_age))%>%
   filter(!is.na(learn_about_study))
 
+
+theme_set(theme_classic())
+# Plot
+  g <- ggplot(Mat_bmi, aes(learn_about_study, analysis_bmi))
+  g + geom_boxplot(varwidth=T, fill="plum") + 
+      labs(caption="Source: BEACH Interview",
+           x="How did you hear of our study",
+           y="BMI")
 ```
 
 ### Figure 2.3: Study Duration
