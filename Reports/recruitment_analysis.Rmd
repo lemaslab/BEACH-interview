@@ -275,6 +275,13 @@ Mat_bmi <- ds_some_rows_v1%>%
   filter(!is.na(learn_about_study))%>%
   filter(phone_pass_fail=="pass")
 
+theme_set(theme_classic())
+# Plot
+  g <- ggplot(Mat_bmi, aes(learn_about_study, analysis_bmi))
+  g + geom_boxplot(varwidth=T, fill="plum") + 
+      labs(caption="Source: BEACH Interview",
+           x="How did you hear of our study",
+           y="BMI")
 ```
 ### Figure 3.3: Study Duration
 
@@ -305,5 +312,12 @@ Mat_bmi <- ds_some_rows_v1%>%
   filter(!is.na(learn_about_study))%>%
   filter(consent_complete=="Consented")
 
+theme_set(theme_classic())
+# Plot
+  g <- ggplot(Mat_bmi, aes(learn_about_study, analysis_bmi))
+  g + geom_boxplot(varwidth=T, fill="plum") + 
+      labs(caption="Source: BEACH Interview",
+           x="How did you hear of our study",
+           y="BMI")
 ```
 ### Figure 4.3: Study Duration
