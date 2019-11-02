@@ -214,23 +214,89 @@ h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
 # Phone Screened Encounters
 
 ### Figure 2.1: Maternal Age 
+```{r, echo=FALSE, warning=FALSE}
 
+Mat_age <- ds_some_rows_v1%>%
+  select(record_id,analysis_mat_age,learn_about_study)%>%
+  filter(!is.na(analysis_mat_age))%>%
+  filter(!is.na(learn_about_study))
+
+theme_set(theme_classic())
+# Plot
+  g <- ggplot(Mat_age, aes(learn_about_study, analysis_mat_age))
+  g + geom_boxplot(varwidth=T, fill="plum") + 
+      labs(caption="Source: BEACH Interview",
+           x="How did you hear of our study",
+           y="Age(years)")
+```
 ### Figure 2.2: Maternal BMI 
+
+```{r}
+Mat_bmi <- ds_some_rows_v1%>%
+  select(record_id,analysis_mat_age,learn_about_study,analysis_bmi)%>%
+  filter(!is.na(analysis_mat_age))%>%
+  filter(!is.na(learn_about_study))
+
+```
 
 ### Figure 2.3: Study Duration
 
 # PASS Phone Screen
 
 ### Figure 3.1: Maternal Age 
+```{r, echo=FALSE, warning=FALSE}
 
+Mat_age <- ds_some_rows_v1%>%
+  select(record_id,analysis_mat_age,learn_about_study,phone_pass_fail)%>%
+  filter(!is.na(analysis_mat_age))%>%
+  filter(!is.na(learn_about_study))%>%
+  filter(phone_pass_fail=="pass")
+
+theme_set(theme_classic())
+# Plot
+  g <- ggplot(Mat_age, aes(learn_about_study, analysis_mat_age))
+  g + geom_boxplot(varwidth=T, fill="plum") + 
+      labs(caption="Source: BEACH Interview",
+           x="How did you hear of our study",
+           y="Age(years)")
+```
 ### Figure 3.2: Maternal BMI 
+```{r}
+Mat_bmi <- ds_some_rows_v1%>%
+  select(record_id,analysis_mat_age,learn_about_study,phone_pass_fail,analysis_bmi)%>%
+  filter(!is.na(analysis_mat_age))%>%
+  filter(!is.na(learn_about_study))%>%
+  filter(phone_pass_fail=="pass")
 
+```
 ### Figure 3.3: Study Duration
 
 # Consented Participants
 
 ### Figure 4.1: Maternal Age 
+```{r, echo=FALSE, warning=FALSE}
 
+Mat_age <- ds_some_rows_v1%>%
+  select(record_id,analysis_mat_age,learn_about_study,consent_complete)%>%
+  filter(!is.na(analysis_mat_age))%>%
+  filter(!is.na(learn_about_study))%>%
+  filter(consent_complete=="Consented")
+
+theme_set(theme_classic())
+# Plot
+  g <- ggplot(Mat_age, aes(learn_about_study, analysis_mat_age))
+  g + geom_boxplot(varwidth=T, fill="plum") + 
+      labs(caption="Source: BEACH Interview",
+           x="How did you hear of our study",
+           y="Age(years)")
+```
 ### Figure 4.2: Maternal BMI 
+```{r}
+Mat_bmi <- ds_some_rows_v1%>%
+  select(record_id,analysis_mat_age,learn_about_study,consent_complete,analysis_bmi)%>%
+  filter(!is.na(analysis_mat_age))%>%
+  filter(!is.na(learn_about_study))%>%
+  filter(consent_complete=="Consented")
 
+```
 ### Figure 4.3: Study Duration
