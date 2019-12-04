@@ -76,6 +76,7 @@ records.v1=c("BIS001A","BIS002A","BIS003A","BIS004A","BIS005A",
                      "278","280","281","282","283","286","289",
                      "290","291","293","294","295","296","297","85","88","90")
 
+ds <- data.frame(records.v1)
 # pull data
 recruit <- redcap_read(
   redcap_uri = uri, 
@@ -96,7 +97,7 @@ ds_some_rows_v1=recruit %>%
   mutate(previous_kids = recode(analysis_kids_previous, "1"="yes","0"="no"))%>%
   mutate(income = recode(analysis_income, "1"="$0-$15,000","2"="$15,001-$19,000","3"="$19,001-$37,000","4"="$37,001-$44,000","5"="$44,001-$52,000","6"="$52,001-$56,000","7"="$56,001-$67,000","8"="$67,001-$79,000","9"="$79,001 or more"))%>%
   mutate(phone_pass_fail = recode(int_phone_pass_fail, "1"="pass","0"="fail"))%>%
-  mutate(consent_complete = recode(int_consent_complete, "1"="Consented","0"="not Consented"))
+  mutate(consent_complete = recode(int_consent_complete, "1"="Consented","0"="not Consented", "NA"="not Consented"))
 
 ```
 
@@ -114,8 +115,9 @@ Totals <- ds_some_rows_v1%>%
 formattable(Totals, align =c("l","r"))
 ```
 
-##Encounters Over Time
-###Total Encounters
+## Encounters Over Time
+
+### Total Encounters
 ```{r, echo=FALSE, warning=FALSE, fig.cap= "Fig2: Encounters over time"}
 
 Encounter_per_time <- ds_some_rows_v1%>%
@@ -154,7 +156,7 @@ h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
 
 formattable(Encounter_per_time,align=c("l","c","c","r"))
 ```
-###Passed Participants
+### Passed Participants
 ```{r, echo=FALSE, fig.cap= "Fig3: encounters that passed phone screening over time"}
 # provides the number of total passed participants per month per encounter type(how they learned about our study) 
 total_pass <- ds_some_rows_v1%>%
@@ -227,7 +229,7 @@ formattable(flyer_pass, align=c("l","c","r"))
 ```
 
 
-##Figures of Encounters with Consented Participants
+## Figures of Encounters with Consented Participants
 
 ```{r, echo=FALSE, fig.cap= "Fig6: Consented Participants Over Time"}
 # Provides a filter to the data to view how particpnats heard about the study AND consented. Showed greater favor for Facebook recruitment.
@@ -310,9 +312,9 @@ formattable(social_pass_consent,asign=c("l","c","r"))
 ```
 
 
-##demographics
+## Demographics
 
-###Maternal Age of participants
+### Maternal Age of participants
 ```{r, echo=FALSE ,fig.cap= "Fig9: Participant Age"}
 #select all the maternal ages and remove NA values:
 
@@ -341,7 +343,7 @@ formattable(Mat_age,asign=c("l","c","r"))
 ```
   
   
-###BMI of Participants
+### BMI of Participants
 ```{r, echo=FALSE, fig.cap="Fig10:BMI"}
   #Determining the average BMI per enocunter type.
 Pre_BMI <- ds_some_rows_v1%>%
@@ -426,7 +428,7 @@ formattable(Pre_BMI_H30,asign=c("l","c","r"))
 #Level of education between participants
 ```
 
-###Education Level of participants
+### Education Level of participants
 ```{r, echo=FALSE, fig.cap="Fig11.Education"}
 Education <- ds_some_rows_v1%>%
   select(record_id,education_level)%>%
@@ -474,7 +476,7 @@ formattable(Education_encounter, asign=c("l","c","c","r"))
 
 ```
 
-###Income Breakdown
+### Income Breakdown
 ```{r, echo=FALSE,fig.cap="Fig12.Income"}
 
 #total income levels of participants 
@@ -522,7 +524,7 @@ h + geom_histogram(aes(fill=factor(income)), stat = "Identity",
 formattable(income_level, asign=c("l","c","c","r"))
 ```
 
-###Previous births
+### Previous births
 ```{r, echo=FALSE, fig.cap="Fig13.Previous Birth Information"}
 previous_births <- ds_some_rows_v1%>%
   select(record_id,previous_kids,learn_about_study)%>%
@@ -558,7 +560,7 @@ formattable(previous_births, asign=c("l","c","r"))
 ```
 
 
-###Preganent and Nonpregnant Participant Breakdown
+### Preganent and Nonpregnant Participant Breakdown
 ```{r, echo=FALSE, fig.cap="Fig14.Birth/pregnant"}
 A_Preg <- ds_some_rows_v1%>%
   select(record_id,learn_about_study)%>%
@@ -595,7 +597,7 @@ formattable(C_Preg,asign=c("l","r"))
 
 ```
 
-##Reviewing encounters without time
+## Reviewing encounters without time
 ```{r, echo=FALSE, fig.cap="Fig15.Encounter independent of time"}
 encounters <- ds_some_rows_v1%>%
   select(learn_about_study_int)%>%
@@ -614,8 +616,8 @@ g + geom_bar(stat="identity", width = 0.5, fill="tomato2") +
 
 encounters_consent <- ds_some_rows_v1%>%
   select(learn_about_study,consent_complete)%>%
-  filter(!is.na(learn_about_study))%>%
-  replace_na(consent_complete="not Consented")%>%
+  filter(!is.na(learn_about_study)) %>%
+  replace_na(list( consent_complete = "not Consented"))%>%
   group_by(learn_about_study, consent_complete)%>%
   summarise(count=n())
 
