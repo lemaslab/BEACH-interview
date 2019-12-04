@@ -63,7 +63,7 @@ events_to_retain  <- c("beach_interview_phone_screen","beach_interview_study_enc
 # export field names
 
 # consented records
-consent.records.v1=c("BIS001A","BIS002A","BIS003A","BIS004A","BIS005A",
+records.v1=c("BIS001A","BIS002A","BIS003A","BIS004A","BIS005A",
                      "BIS006A","BIS007A","BIS008A","BIS009A","BIS010A",
                      "BIS011A","BIS013A","BIS014A","BIS018A","BIS019A",
                      "BIS022A","BIS023A","BIS024A","BIS025A","BIS026A",
@@ -81,21 +81,24 @@ consent.records.v1=c("BIS001A","BIS002A","BIS003A","BIS004A","BIS005A",
                      "278","280","281","282","283","286","289",
                      "290","291","293","294","295","296","297","85","88","90")
 
+ds <- data.frame(records.v1)
+
 # pull data
 ds_some_rows_v1 <- redcap_read(
   redcap_uri = uri, 
-  records= consent.records.v1,
+  records= records.v1,
   token      = beach_token, 
   fields     = desired_fields
   
 )$data
 ```
 
-```{r echo=FALSE}
+```{r echo=FALSE, warning=FALSE}
 # recode encounter type
 ds_some_rows_v1=ds_some_rows_v1 %>%
   #use mutate(new column = recode(current column to be recoded, "variable in column"="new variable name"))
     mutate(learn_about_study = recode(learn_about_study_int, "1"="Flyer","3"="Facebook","5"="Other"))%>%
+  replace_na(list( learn_about_study = "Didn't Respond"))%>%
   mutate(education_level = recode(mom3t_education_2,"1"="8th grade or less","2"="some high school","3"="high school diploma/GED","4"="some college or community college","5"="Associates degree","6"="completed tech or vocational school","7"="college graduate","8"="some graduate or professional school","9"="Graduate or professional degree"))%>%
   mutate(previous_kids = recode(analysis_kids_previous, "1"="yes","0"="no"))%>%
   mutate(income = recode(analysis_income, "1"="$0-$15,000","2"="$15,001-$19,000","3"="$19,001-$37,000","4"="$37,001-$44,000","5"="$44,001-$52,000","6"="$52,001-$56,000","7"="$56,001-$67,000","8"="$67,001-$79,000","9"="$79,001 or more"))%>%
@@ -106,7 +109,7 @@ ds_some_rows_v1=ds_some_rows_v1 %>%
 
 
 
-```{r echo=FALSE}
+```{r echo=FALSE, warning=FALSE}
 
 #------------------------------------------
   #creating the tables for each round of facebook add
@@ -122,49 +125,49 @@ my_data <- data.frame(encounter_date_int = seq(as.Date("2017-01-01"), as.Date("2
 
 my_complete <- full_join(my_data, Encounter_per_time, by = "encounter_date_int")
 
-round_1 <- my_complete%>%
+round_1 <- Encounter_per_time%>%
   separate(encounter_date_int,c("y","m","d"))%>%
   filter(y=="2018", m>="03" & m<="05")%>%
   group_by(learn_about_study,m,y)%>%
   summarize(count=n())%>%
   unite("YM",c("y","m"),sep ="-")
 
-round_2 <- my_complete%>%
+round_2 <- Encounter_per_time%>%
   separate(encounter_date_int,c("y","m","d"))%>%
   filter(y=="2018", m>="05" & m<="08")%>%
   group_by(learn_about_study,m,y)%>%
   summarize(count=n())%>%
   unite("YM",c("y","m"),sep ="-")
 
-round_3 <- my_complete%>%
+round_3 <- Encounter_per_time%>%
   separate(encounter_date_int,c("y","m","d"))%>%
   filter(y=="2018", m>="11" & m<="11")%>%
   group_by(learn_about_study,m,y)%>%
   summarize(count=n())%>%
   unite("YM",c("y","m"),sep ="-")
 
-round_4 <- my_complete%>%
+round_4 <- Encounter_per_time%>%
   separate(encounter_date_int,c("y","m","d"))%>%
   filter(y=="2018", m>="11" & m<="12")%>%
   group_by(learn_about_study,m,y)%>%
   summarize(count=n())%>%
   unite("YM",c("y","m"),sep ="-")
 
-round_5 <- my_complete%>%
+round_5 <- Encounter_per_time%>%
   separate(encounter_date_int,c("y","m","d"))%>%
   filter(y=="2019", m>="02" & m<="02")%>%
   group_by(learn_about_study,m,y)%>%
   summarize(count=n())%>%
   unite("YM",c("y","m"),sep ="-")
 
-round_6 <- my_complete%>%
+round_6 <- Encounter_per_time%>%
   separate(encounter_date_int,c("y","m","d"))%>%
   filter(y=="2019", m>="04" & m<="05")%>%
   group_by(learn_about_study,m,y)%>%
   summarize(count=n())%>%
   unite("YM",c("y","m"),sep ="-")
 
-round_7 <- my_complete%>%
+round_7 <- Encounter_per_time%>%
   separate(encounter_date_int,c("y","m","d"))%>%
   filter(y=="2019", m>="09" & m<="10")%>%
   group_by(learn_about_study,m,y)%>%
@@ -173,7 +176,7 @@ round_7 <- my_complete%>%
 ```
 
 
-```{r echo=FALSE}
+```{r echo=FALSE, warning=FALSE}
 #------------------------------------------
   #creating the graphs for each round of facebook add
 #------------------------------------------
@@ -195,7 +198,7 @@ h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
   theme(axis.text.x = element_text(angle=70, vjust =.6))
 
 
-formattable(Encounter_per_time,align=c("l","c","c","r"))
+#formattable(Encounter_per_time,align=c("l","c","c","r"))
 
 theme_set(theme_classic())
 # distribution of visits each month(histogram)
@@ -206,7 +209,7 @@ h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
                    size=.1) + # change number of bins
   # geom_density() + #this function is meant to draw a trend line for the graph
   # stat_bin(aes(y=count,label=count),geom="text",vjust=-.5) +   # this will display the total count of each bin
-  labs(title="Recruitment for Round 1 Facebook adds", 
+  labs(title="Recruitment for Round 2 Facebook adds", 
        subtitle="2 months of add, May 2018-August 2018",
        x="Date(Year-Month)",
        y="Count",
@@ -214,7 +217,7 @@ h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
   theme(axis.text.x = element_text(angle=70, vjust =.6))
 
 
-formattable(Encounter_per_time,align=c("l","c","c","r"))
+#formattable(Encounter_per_time,align=c("l","c","c","r"))
 
 theme_set(theme_classic())
 # distribution of visits each month(histogram)
@@ -225,7 +228,7 @@ h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
                    size=.1) + # change number of bins
   # geom_density() + #this function is meant to draw a trend line for the graph
   # stat_bin(aes(y=count,label=count),geom="text",vjust=-.5) +   # this will display the total count of each bin
-  labs(title="Recruitment for Round 1 Facebook adds", 
+  labs(title="Recruitment for Round 3 Facebook adds", 
        subtitle="1 months of add, November 2018-November 2018",
        x="Date(Year-Month)",
        y="Count",
@@ -233,7 +236,7 @@ h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
   theme(axis.text.x = element_text(angle=70, vjust =.6))
 
 
-formattable(Encounter_per_time,align=c("l","c","c","r"))
+#formattable(Encounter_per_time,align=c("l","c","c","r"))
 
 theme_set(theme_classic())
 # distribution of visits each month(histogram)
@@ -244,7 +247,7 @@ h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
                    size=.1) + # change number of bins
   # geom_density() + #this function is meant to draw a trend line for the graph
   # stat_bin(aes(y=count,label=count),geom="text",vjust=-.5) +   # this will display the total count of each bin
-  labs(title="Recruitment for Round 1 Facebook adds", 
+  labs(title="Recruitment for Round 4 Facebook adds", 
        subtitle="2 months of add, November 2018-December 2018",
        x="Date(Year-Month)",
        y="Count",
@@ -252,7 +255,7 @@ h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
   theme(axis.text.x = element_text(angle=70, vjust =.6))
 
 
-formattable(Encounter_per_time,align=c("l","c","c","r"))
+#formattable(Encounter_per_time,align=c("l","c","c","r"))
 
 theme_set(theme_classic())
 # distribution of visits each month(histogram)
@@ -263,7 +266,7 @@ h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
                    size=.1) + # change number of bins
   # geom_density() + #this function is meant to draw a trend line for the graph
   # stat_bin(aes(y=count,label=count),geom="text",vjust=-.5) +   # this will display the total count of each bin
-  labs(title="Recruitment for Round 1 Facebook adds", 
+  labs(title="Recruitment for Round 5 Facebook adds", 
        subtitle="1 months of add, February 2019-February 2019",
        x="Date(Year-Month)",
        y="Count",
@@ -271,7 +274,7 @@ h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
   theme(axis.text.x = element_text(angle=70, vjust =.6))
 
 
-formattable(Encounter_per_time,align=c("l","c","c","r"))
+#formattable(Encounter_per_time,align=c("l","c","c","r"))
 
 theme_set(theme_classic())
 # distribution of visits each month(histogram)
@@ -282,7 +285,7 @@ h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
                    size=.1) + # change number of bins
   # geom_density() + #this function is meant to draw a trend line for the graph
   # stat_bin(aes(y=count,label=count),geom="text",vjust=-.5) +   # this will display the total count of each bin
-  labs(title="Recruitment for Round 1 Facebook adds", 
+  labs(title="Recruitment for Round 6 Facebook adds", 
        subtitle="2 months of add, April 2019-May 2019",
        x="Date(Year-Month)",
        y="Count",
@@ -290,7 +293,7 @@ h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
   theme(axis.text.x = element_text(angle=70, vjust =.6))
 
 
-formattable(Encounter_per_time,align=c("l","c","c","r"))
+#formattable(Encounter_per_time,align=c("l","c","c","r"))
 
 theme_set(theme_classic())
 # distribution of visits each month(histogram)
@@ -301,7 +304,7 @@ h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
                    size=.1) + # change number of bins
   # geom_density() + #this function is meant to draw a trend line for the graph
   # stat_bin(aes(y=count,label=count),geom="text",vjust=-.5) +   # this will display the total count of each bin
-  labs(title="Recruitment for Round 1 Facebook adds", 
+  labs(title="Recruitment for Round 7 Facebook adds", 
        subtitle="2 months of add, September 2019-October 2019",
        x="Date(Year-Month)",
        y="Count",
@@ -309,7 +312,7 @@ h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
   theme(axis.text.x = element_text(angle=70, vjust =.6))
 
 
-formattable(Encounter_per_time,align=c("l","c","c","r"))
+#formattable(Encounter_per_time,align=c("l","c","c","r"))
 
 
 
