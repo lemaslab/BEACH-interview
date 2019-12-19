@@ -10,6 +10,10 @@ output:
     toc_float: yes
 ---
 
+# predictor: recruitment type. limit to flier and facebook. 
+# outcomes: BMI, age, 
+# tests: mean (t-test), median (?), variance (f-test)
+
 
 ```{r, include=FALSE, warning=FALSE}
 
@@ -84,6 +88,7 @@ recruit <- redcap_read(
   fields     = desired_fields
 )$data
 
+
 ```
 
 ```{r, include=FALSE, warning=FALSE}
@@ -103,6 +108,19 @@ ds_some_rows_v1=recruit %>%
          -int_phone_pass_fail,-int_consent_complete)
 
 ```
+
+## Consent Encounter
+```{r, echo=FALSE, warning=FALSE, fig.cap= "Fig1a: consent encounters"}
+Consented <- ds_some_rows_v1%>%
+  filter(consent_complete=="Consented")%>%
+  select(learn_about_study)%>%
+  group_by(learn_about_study)%>%
+  summarize(count=n())%>%
+  rename("how did you hear about us?"=learn_about_study)
+
+formattable(Consented, align =c("l","r"))
+```
+
 
 ## Encounters Summary
 ```{r, echo=FALSE, warning=FALSE, fig.cap= "Fig1: total encounters"}
