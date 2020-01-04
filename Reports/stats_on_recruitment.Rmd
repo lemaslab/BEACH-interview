@@ -103,7 +103,8 @@ ds_some_rows_v1=ds_some_rows_v1 %>%
   mutate(previous_kids = recode(analysis_kids_previous, "1"="yes","0"="no"))%>%
   mutate(income = recode(analysis_income, "1"="$0-$15,000","2"="$15,001-$19,000","3"="$19,001-$37,000","4"="$37,001-$44,000","5"="$44,001-$52,000","6"="$52,001-$56,000","7"="$56,001-$67,000","8"="$67,001-$79,000","9"="$79,001 or more"))%>%
   mutate(phone_pass_fail = recode(int_phone_pass_fail, "1"="pass","0"="fail"))%>%
-  mutate(consent_complete = recode(int_consent_complete, "1"="Consented","0"="not Consented","NA"="Did not respond"))
+  mutate(consent_complete = recode(int_consent_complete, "1"="Consented","0"="not Consented"))%>%
+  replace_na(list( consent_complete = "not Consented"))
 
 ```
 
@@ -116,6 +117,33 @@ Totals <- ds_some_rows_v1%>%
 
 formattable(Totals, align =c("l","r"))
 ```
+
+
+```{r echo=FALSE, warning=FALSE}
+
+normal <- ds_some_rows_v1%>%
+  select(learn_about_study,consent_complete,phone_pass_fail,analysis_bmi)%>%
+  filter(analysis_bmi<25,!is.na(phone_pass_fail))
+
+over <- ds_some_rows_v1%>%
+  select(learn_about_study,consent_complete,phone_pass_fail,analysis_bmi)%>%
+  filter(analysis_bmi>=25,!is.na(phone_pass_fail))
+
+formattable(normal, align =c("l","c","c","r"))
+formattable(over, align =c("l","c","c","r"))
+
+normal_sum <- normal%>%
+  group_by(learn_about_study)%>%
+  summarize(count=n())
+
+over_sum <- over%>%
+  group_by(learn_about_study)%>%
+  summarize(count=n())
+
+formattable(normal_sum, align =c("l","r"))
+formattable(over_sum, align =c("l","r"))
+```
+
 
 # t-test for Facebook vs. Flyers Encounters
 ## Not working yet

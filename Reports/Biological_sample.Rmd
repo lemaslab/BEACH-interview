@@ -124,3 +124,34 @@ encounter_of_bioParticipant <- ds_some_rows_v1%>%
 formattable(encounter_of_bioParticipant, align=c("l","r"))
 ```
 
+
+# review samples collected between normal and overweight particiapnts
+```{r echo=FALSE, warning=FALSE}
+
+bio_Participants <- ds_some_rows_v1%>%
+  select(record_id,biosample_collection_date,biosample_mom_baby,biosample_aliquot_type,learn_about_study)%>%
+  filter(!is.na(biosample_collection_date))%>%
+  distinct(record_id)
+
+encounter_of_bioParticipant <- ds_some_rows_v1%>%
+  select(record_id,learn_about_study,analysis_bmi)%>%
+  filter(analysis_bmi<25)%>%
+  inner_join(bio_Participants,encounter_of_bioParticipant, by="record_id")%>%
+  distinct(record_id, .keep_all = TRUE)%>%
+  group_by(learn_about_study)%>%
+  summarise(count=n())
+
+formattable(encounter_of_bioParticipant, align=c("l","r"))
+
+encounter_of_bioParticipant <- ds_some_rows_v1%>%
+  select(record_id,learn_about_study,analysis_bmi)%>%
+  filter(analysis_bmi>=25)%>%
+  inner_join(bio_Participants,encounter_of_bioParticipant, by="record_id")%>%
+  distinct(record_id, .keep_all = TRUE)%>%
+  group_by(learn_about_study)%>%
+  summarise(count=n())
+
+formattable(encounter_of_bioParticipant, align=c("l","r"))
+
+```
+
