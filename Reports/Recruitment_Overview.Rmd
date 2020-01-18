@@ -109,6 +109,16 @@ ds_some_rows_v1=ds_some_rows_v1 %>%
 ```
 # Recruitment overview
 
+### One of the major reasons for research delay has been recuritment isues. 9 out of 10 trials require the origional timeline to be extended due to lack of particiapnts. The problem with recruitment stems from a lack of inovention with the field and use of out of date practices. However, new methods have arisen that can prove to be a solution to the issues with current recruitment methods. The use of Facebook for recuritment solves the problems of particiapnt targeting and recruitment rates. Within the BEACH Interview study we recruited both through flyers and Facebook; however, to trully test the effectivness of the Facebook method againest the tradtional method of flyering we only conducted an ad for discrete periods of time. Following the study's completion we analysed our recruitment and found statistically signifigant differences between our two groups: pregnant and breastfeeding moms.
+
+### The Objectives of this study are to:
+### 1.) Preform exploritory data analysis to discover statistically signifigant difference between tradtional and modern recuritment methods.
+### 2.) Confirm analysison the BEACH study to prove support the analysis found in this study. 
+### 3.) Constuct a reactive shinyR server that will allow for more responsive and accuracte recuritment. 
+
+### Below we have the numbers of particiaptns we recruited per quarter broken down by how they heard of our study. We show both screened and consented participants over the course of the study. 
+
+
 ## Participants screened
 ```{r, echo=FALSE, warning=FALSE}
 Encounter_per_time <- ds_some_rows_v1%>%
@@ -169,26 +179,51 @@ Monthly_recruitment <- ds_some_rows_v1%>%
   rename("Recruitment for the month"=count,"Month of Recruitment"=YM)
 
 
-formattable(Monthly_recruitment, align =c("l","r"))
+#formattable(Monthly_recruitment, align =c("l","r"))
 ```
 
 ## Consented Particiapnts 
-```{r, echo=FALSE, fig.cap= "Fig6: Consented Participants Over Time"}
+```{r, echo=FALSE, warning=FALSE, fig.cap= "Fig6: Consented Participants Over Time"}
 # Provides a filter to the data to view how particpnats heard about the study AND consented. Showed greater favor for Facebook recruitment.
 
-Consent_per_Time <- ds_some_rows_v1%>%
+Encounter_per_time <- ds_some_rows_v1%>%
   select(encounter_date_int,learn_about_study, consent_complete)%>%
+  filter(consent_complete=="Consented")
+
+Encounter_per_time$encounter_date_int <- as.Date(Encounter_per_time$encounter_date_int, format= "%Y-%m-%d")
+
+my_data <- data.frame(encounter_date_int = seq(as.Date("2017-01-01"), as.Date("2019-12-31"), 
+  by = "1 month"), format= "%Y-%m-%d")
+
+my_complete <- full_join(my_data, Encounter_per_time, by = "encounter_date_int")
+
+Encounter_per_time <- my_complete%>%
   separate(encounter_date_int,c("y","m","d"))%>%
-  filter(consent_complete=="Consented")%>%
-  group_by(learn_about_study,m,y)%>%
+  mutate(Quarter = case_when(
+    m == "01" | m == "02" | m == "03" ~ "Q1",
+    m == "04" | m == "05" | m == "06" ~ "Q2",
+    m == "07" | m == "08" | m == "09" ~ "Q3",
+    m == "10" | m == "11" | m == "12" ~ "Q4",
+    TRUE~"Q5"))%>%
+  
+  group_by(learn_about_study,y,Quarter)%>%
   summarize(count=n())%>%
-  unite("YM",c("y","m"),sep ="-")
+  unite("YQ",c("y",Quarter),sep ="-")
+
+
+#Consent_per_Time <- ds_some_rows_v1%>%
+#  select(encounter_date_int,learn_about_study, consent_complete)%>%
+#  separate(encounter_date_int,c("y","m","d"))%>%
+#  filter(consent_complete=="Consented")%>%
+#  group_by(learn_about_study,m,y)%>%
+#  summarize(count=n())%>%
+#  unite("YM",c("y","m"),sep ="-")
 
 
 theme_set(theme_classic())
 
 # distribution of visits each month(histogram)
-h <- ggplot(Consent_per_Time, aes(YM, count)) + scale_fill_brewer(palette = "Spectral")
+h <- ggplot(Encounter_per_time, aes(YQ, count)) + scale_fill_brewer(palette = "Spectral")
 h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
                    bins=24,
                    col="black", 
@@ -203,15 +238,17 @@ h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
        fill="How did you learn about the study") +
   theme(axis.text.x = element_text(angle=70, vjust =.6))
 
-formattable(Consent_per_Time,align=c("l","c","r"))
+#formattable(Encounter_per_time,align=c("l","c","r"))
 ```
 
 
 # Demographics
 
-## Overview
 
-### BMI 
+
+### We focused our recruitment around 2 groups: Breasfeeding and Pregnant mother with BMI's that would represent both normal weight and overweight mothers. For this reason we hoped to recruit a wide rage of mother with varying BMI and we hoped that Facebook would provide mothers of a wide rage of BMI and age. We tested the varance between recruitment methods and provided a visualization of both BMI and age in boxplots. Below is a review of that research over the whole study without specifying pergant or breastfeeding.
+
+
 
 ```{r echo=FALSE,warning=FALSE}
   #Determining the average BMI per enocunter type.
@@ -245,30 +282,33 @@ means <- aggregate(analysis_bmi ~  learn_about_study, Pre_BMI, mean)
 #formattable(Pre_BMI,asign=c("l","c","r"))
 ```
 
-#### BMI mean, median, and variance 
+### These tables review our recruitment between BMI groups(overweight and normal weight)
+
 ```{r echo=FALSE, warning=FALSE}
-BMI <- ds_some_rows_v1%>%
-  select(analysis_bmi)%>%
-  filter(!is.na(analysis_bmi))
-mean_bmi <- BMI[[1]]
-mean(mean_bmi)
-median(mean_bmi)
-BMI_face <- ds_some_rows_v1%>%
-  select(analysis_bmi,learn_about_study)%>%
-  filter(!is.na(analysis_bmi),learn_about_study=="Facebook")%>%
-  select(analysis_bmi)
-BMI_flyer <- ds_some_rows_v1%>%
-  select(analysis_bmi,learn_about_study)%>%
-  filter(!is.na(analysis_bmi),learn_about_study=="Flyer")%>%
-  select(analysis_bmi)
-face_bmi <- BMI_face[[1]]
-flyer_bmi <- BMI_flyer[[1]]
 
-var_T <- var.test(face_bmi,flyer_bmi)
-glance(var_T)
+normal <- ds_some_rows_v1%>%
+  select(learn_about_study,consent_complete,phone_pass_fail,analysis_bmi)%>%
+  filter(analysis_bmi<25,!is.na(phone_pass_fail))
+
+over <- ds_some_rows_v1%>%
+  select(learn_about_study,consent_complete,phone_pass_fail,analysis_bmi)%>%
+  filter(analysis_bmi>=25,!is.na(phone_pass_fail))
+
+
+
+normal_sum <- normal%>%
+  group_by(learn_about_study)%>%
+  summarize(count=n())%>%
+  rename("Encounter type"=learn_about_study, "Count of normal weight particiapnts(BMI<25)"=count)
+
+over_sum <- over%>%
+  group_by(learn_about_study)%>%
+  summarize(count=n())%>%
+  rename("Encounter type"=learn_about_study, "Count of overweight particiapnts(BMI>25)"=count)
+
+#formattable(normal_sum, align =c("l","r"))
+formattable(over_sum, align =c("l","r"))
 ```
-
-#### Breakdown of normal weight participant per encounter
 
 ```{r echo=FALSE, warning=FALSE}
 
@@ -296,34 +336,35 @@ formattable(normal_sum, align =c("l","r"))
 #formattable(over_sum, align =c("l","r"))
 ```
 
-#### Breakdown of overweight participant per encounter
+
+### Below is a tabulation of the mean, median, and varance between Facebook and flyers to test for any statistical signifigance. blow represents mean, median, and an F-test to test for vareance. 
+
 ```{r echo=FALSE, warning=FALSE}
+BMI <- ds_some_rows_v1%>%
+  select(analysis_bmi)%>%
+  filter(!is.na(analysis_bmi))
+mean_bmi <- BMI[[1]]
+mean(mean_bmi)
+median(mean_bmi)
+BMI_face <- ds_some_rows_v1%>%
+  select(analysis_bmi,learn_about_study)%>%
+  filter(!is.na(analysis_bmi),learn_about_study=="Facebook")%>%
+  select(analysis_bmi)
+BMI_flyer <- ds_some_rows_v1%>%
+  select(analysis_bmi,learn_about_study)%>%
+  filter(!is.na(analysis_bmi),learn_about_study=="Flyer")%>%
+  select(analysis_bmi)
+face_bmi <- BMI_face[[1]]
+flyer_bmi <- BMI_flyer[[1]]
 
-normal <- ds_some_rows_v1%>%
-  select(learn_about_study,consent_complete,phone_pass_fail,analysis_bmi)%>%
-  filter(analysis_bmi<25,!is.na(phone_pass_fail))
-
-over <- ds_some_rows_v1%>%
-  select(learn_about_study,consent_complete,phone_pass_fail,analysis_bmi)%>%
-  filter(analysis_bmi>=25,!is.na(phone_pass_fail))
-
-
-
-normal_sum <- normal%>%
-  group_by(learn_about_study)%>%
-  summarize(count=n())%>%
-  rename("Encounter type"=learn_about_study, "Count of normal weight particiapnts(BMI<25)"=count)
-
-over_sum <- over%>%
-  group_by(learn_about_study)%>%
-  summarize(count=n())%>%
-  rename("Encounter type"=learn_about_study, "Count of overweight particiapnts(BMI>25)"=count)
-
-#formattable(normal_sum, align =c("l","r"))
-formattable(over_sum, align =c("l","r"))
+var_T <- var.test(face_bmi,flyer_bmi)
+glance(var_T)
 ```
 
-### Age
+
+
+
+### We preformed the same tests with the age of the participants.
 
 ```{r, echo=FALSE ,fig.cap= "Fig9: Participant Age"}
 #select all the maternal ages and remove NA values:
@@ -353,7 +394,7 @@ Mat_age$learn_about_study <- as.factor(Mat_age$learn_about_study)
 #formattable(Mat_age,asign=c("l","c","r"))
 ```
 
-#### Age mean, median, and varience
+### Below we have the statstics of age.
 ```{r echo=FALSE, warning=FALSE}
 BMI <- ds_some_rows_v1%>%
   select(analysis_mat_age)%>%
@@ -375,9 +416,11 @@ flyer_bmi <- BMI_flyer[[1]]
 var.test(face_bmi,flyer_bmi)
 ```
 
-## Subgroup breakdown: Pregant particpants 
+### Following a review of the entire study we reviewed our two groups of interest: pregnant and breastfeeding.
 
-### BMI 
+### Below we analysed our pregnant group first against their BMI's and ages to test for any statsitical signifigance between recuritment methods. 
+
+### we first reviewed the particiapnts BMI.
 
 ```{r echo=FALSE,warning=FALSE}
   #Determining the average BMI per enocunter type.
@@ -412,7 +455,7 @@ means <- aggregate(analysis_bmi ~  learn_about_study, Pre_BMI, mean)
 #formattable(Pre_BMI,asign=c("l","c","r"))
 ```
 
-#### BMI mean, median, and variance 
+### We preformed statistical analysis within the group against recurtment methods and tested mean, median, and variance. 
 ```{r echo=FALSE, warning=FALSE}
 BMI <- ds_some_rows_v1%>%
   select(analysis_bmi,record_id)%>%
@@ -440,7 +483,7 @@ flyer_bmi <- BMI_flyer[[1]]
 var.test(face_bmi,flyer_bmi)
 ```
 
-### Age
+### We preformed the same review for our pregnant mothers groups.
 
 ```{r, echo=FALSE ,fig.cap= "Fig9: Participant Age"}
 #select all the maternal ages and remove NA values:
@@ -471,7 +514,7 @@ Mat_age$learn_about_study <- as.factor(Mat_age$learn_about_study)
 #formattable(Mat_age,asign=c("l","c","r"))
 ```
 
-#### Age mean, median, and varience
+### We preformed statistical analysis within the group against recurtment methods and tested mean, median, and variance. 
 ```{r echo=FALSE, warning=FALSE}
 BMI <- ds_some_rows_v1%>%
   select(analysis_mat_age,record_id)%>%
@@ -499,9 +542,9 @@ flyer_bmi <- BMI_flyer[[1]]
 var.test(face_bmi,flyer_bmi)
 ```
 
-## Subgroup breakdown: nonpregnant particpants 
+### Below we analysed our Breastfeeding group against their BMI's and ages to test for any statsitical signifigance between recuritment methods. 
 
-### BMI 
+### we first reviewed the particiapnts BMI.
 
 ```{r echo=FALSE,warning=FALSE}
   #Determining the average BMI per enocunter type.
@@ -536,7 +579,7 @@ means <- aggregate(analysis_bmi ~  learn_about_study, Pre_BMI, mean)
 #formattable(Pre_BMI,asign=c("l","c","r"))
 ```
 
-#### BMI mean, median, and variance 
+### We preformed statistical analysis within the group against recurtment methods and tested mean, median, and variance. 
 ```{r echo=FALSE, warning=FALSE}
 BMI <- ds_some_rows_v1%>%
   select(analysis_bmi,record_id)%>%
@@ -564,7 +607,7 @@ flyer_bmi <- BMI_flyer[[1]]
 var.test(face_bmi,flyer_bmi)
 ```
 
-### Age
+### We preformed the same analysis for breastfeeding mother's age. Our analysis is below. 
 
 ```{r, echo=FALSE ,fig.cap= "Fig9: Participant Age"}
 #select all the maternal ages and remove NA values:
@@ -595,7 +638,7 @@ Mat_age$learn_about_study <- as.factor(Mat_age$learn_about_study)
 #formattable(Mat_age,asign=c("l","c","r"))
 ```
 
-#### Age mean, median, and varience
+### We preformed statistical analysis within the group against recurtment methods and tested mean, median, and variance. 
 ```{r echo=FALSE, warning=FALSE}
 BMI <- ds_some_rows_v1%>%
   select(analysis_mat_age,record_id)%>%
