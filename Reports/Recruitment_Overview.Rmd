@@ -336,28 +336,29 @@ formattable(normal_sum, align =c("l","r"))
 ```
 
 
-#### Below is a tabulation of the mean, median, and variance between Facebook and flyers to test for any statistical significance. blow represents mean, median, and an F-test to test for variance.
+
 
 ```{r echo=FALSE, warning=FALSE}
-BMI <- ds_some_rows_v1%>%
-  select(analysis_bmi)%>%
-  filter(!is.na(analysis_bmi))
-mean_bmi <- BMI[[1]]
-mean(mean_bmi)
-median(mean_bmi)
-BMI_face <- ds_some_rows_v1%>%
-  select(analysis_bmi,learn_about_study)%>%
-  filter(!is.na(analysis_bmi),learn_about_study=="Facebook")%>%
-  select(analysis_bmi)
-BMI_flyer <- ds_some_rows_v1%>%
-  select(analysis_bmi,learn_about_study)%>%
-  filter(!is.na(analysis_bmi),learn_about_study=="Flyer")%>%
-  select(analysis_bmi)
-face_bmi <- BMI_face[[1]]
-flyer_bmi <- BMI_flyer[[1]]
-
-var_T <- var.test(face_bmi,flyer_bmi)
-glance(var_T)
+#### Below is a tabulation of the mean, median, and variance between Facebook and flyers to test for any statistical significance. blow represents mean, median, and an F-test to test for variance.
+#BMI <- ds_some_rows_v1%>%
+#  select(analysis_bmi)%>%
+#  filter(!is.na(analysis_bmi))
+#mean_bmi <- BMI[[1]]
+#mean(mean_bmi)
+#median(mean_bmi)
+#BMI_face <- ds_some_rows_v1%>%
+#  select(analysis_bmi,learn_about_study)%>%
+#  filter(!is.na(analysis_bmi),learn_about_study=="Facebook")%>%
+#  select(analysis_bmi)
+#BMI_flyer <- ds_some_rows_v1%>%
+#  select(analysis_bmi,learn_about_study)%>%
+#  filter(!is.na(analysis_bmi),learn_about_study=="Flyer")%>%
+#  select(analysis_bmi)
+#face_bmi <- BMI_face[[1]]
+#flyer_bmi <- BMI_flyer[[1]]
+#
+#var_T <- var.test(face_bmi,flyer_bmi)
+#glance(var_T)
 ```
 
 
@@ -393,26 +394,27 @@ Mat_age$learn_about_study <- as.factor(Mat_age$learn_about_study)
 #formattable(Mat_age,asign=c("l","c","r"))
 ```
 
-#### Below we have the statistics of age.
-```{r echo=FALSE, warning=FALSE}
-BMI <- ds_some_rows_v1%>%
-  select(analysis_mat_age)%>%
-  filter(!is.na(analysis_mat_age))
-mean_bmi <- BMI[[1]]
-mean(mean_bmi)
-median(mean_bmi)
-BMI_face <- ds_some_rows_v1%>%
-  select(analysis_mat_age,learn_about_study)%>%
-  filter(!is.na(analysis_mat_age),learn_about_study=="Facebook")%>%
-  select(analysis_mat_age)
-BMI_flyer <- ds_some_rows_v1%>%
-  select(analysis_mat_age,learn_about_study)%>%
-  filter(!is.na(analysis_mat_age),learn_about_study=="Flyer")%>%
-  select(analysis_mat_age)
-face_bmi <- BMI_face[[1]]
-flyer_bmi <- BMI_flyer[[1]]
 
-var.test(face_bmi,flyer_bmi)
+```{r echo=FALSE, warning=FALSE}
+#### Below we have the statistics of age.
+#BMI <- ds_some_rows_v1%>%
+#  select(analysis_mat_age)%>%
+#  filter(!is.na(analysis_mat_age))
+#mean_bmi <- BMI[[1]]
+#mean(mean_bmi)
+#median(mean_bmi)
+#BMI_face <- ds_some_rows_v1%>%
+#  select(analysis_mat_age,learn_about_study)%>%
+#  filter(!is.na(analysis_mat_age),learn_about_study=="Facebook")%>%
+#  select(analysis_mat_age)
+#BMI_flyer <- ds_some_rows_v1%>%
+#  select(analysis_mat_age,learn_about_study)%>%
+#  filter(!is.na(analysis_mat_age),learn_about_study=="Flyer")%>%
+#  select(analysis_mat_age)
+#face_bmi <- BMI_face[[1]]
+#flyer_bmi <- BMI_flyer[[1]]
+#
+#var.test(face_bmi,flyer_bmi)
 ```
 
 #### Following a review of the entire study we reviewed our two groups of interest: pregnant and breastfeeding.
@@ -454,32 +456,33 @@ means <- aggregate(analysis_bmi ~  learn_about_study, Pre_BMI, mean)
 #formattable(Pre_BMI,asign=c("l","c","r"))
 ```
 
-#### We preformed statistical analysis within the group against recruitment methods and tested mean, median, and variance.
+
 ```{r echo=FALSE, warning=FALSE}
-BMI <- ds_some_rows_v1%>%
-  select(analysis_bmi,record_id)%>%
-  filter(!is.na(analysis_bmi))%>%
-  slice(26:44)
-
-mean_bmi <- BMI[[1]]
-mean(mean_bmi)
-median(mean_bmi)
-BMI_face <- ds_some_rows_v1%>%
-  select(analysis_bmi,learn_about_study)%>%
-  filter(!is.na(analysis_bmi))%>%
-  slice(26:44)%>%
-  filter(learn_about_study=="Facebook")%>%
-  select(analysis_bmi)
-BMI_flyer <- ds_some_rows_v1%>%
-  select(analysis_bmi,learn_about_study)%>%
-  filter(!is.na(analysis_bmi))%>%
-  slice(26:44)%>%
-  filter(learn_about_study=="Flyer")%>%
-  select(analysis_bmi)
-face_bmi <- BMI_face[[1]]
-flyer_bmi <- BMI_flyer[[1]]
-
-var.test(face_bmi,flyer_bmi)
+#### We preformed statistical analysis within the group against recruitment methods and tested mean, median, and variance.
+#BMI <- ds_some_rows_v1%>%
+#  select(analysis_bmi,record_id)%>%
+#  filter(!is.na(analysis_bmi))%>%
+#  slice(26:44)
+#
+#mean_bmi <- BMI[[1]]
+#mean(mean_bmi)
+#median(mean_bmi)
+#BMI_face <- ds_some_rows_v1%>%
+#  select(analysis_bmi,learn_about_study)%>%
+#  filter(!is.na(analysis_bmi))%>%
+#  slice(26:44)%>%
+#  filter(learn_about_study=="Facebook")%>%
+#  select(analysis_bmi)
+#BMI_flyer <- ds_some_rows_v1%>%
+#  select(analysis_bmi,learn_about_study)%>%
+#  filter(!is.na(analysis_bmi))%>%
+#  slice(26:44)%>%
+#  filter(learn_about_study=="Flyer")%>%
+#  select(analysis_bmi)
+#face_bmi <- BMI_face[[1]]
+#flyer_bmi <- BMI_flyer[[1]]
+#
+#var.test(face_bmi,flyer_bmi)
 ```
 
 #### We preformed the same review for our pregnant mothers' groups.
@@ -513,32 +516,33 @@ Mat_age$learn_about_study <- as.factor(Mat_age$learn_about_study)
 #formattable(Mat_age,asign=c("l","c","r"))
 ```
 
-#### We preformed statistical analysis within the group against recruitment methods and tested mean, median, and variance.
+
 ```{r echo=FALSE, warning=FALSE}
-BMI <- ds_some_rows_v1%>%
-  select(analysis_mat_age,record_id)%>%
-  filter(!is.na(analysis_mat_age))%>%
-  slice(26:44)
-
-mean_bmi <- BMI[[1]]
-mean(mean_bmi)
-median(mean_bmi)
-BMI_face <- ds_some_rows_v1%>%
-  select(analysis_mat_age,learn_about_study)%>%
-  filter(!is.na(analysis_mat_age))%>%
-  slice(26:44)%>%
-  filter(learn_about_study=="Facebook")%>%
-  select(analysis_mat_age)
-BMI_flyer <- ds_some_rows_v1%>%
-  select(analysis_mat_age,learn_about_study)%>%
-  filter(!is.na(analysis_mat_age))%>%
-  slice(26:44)%>%
-  filter(learn_about_study=="Flyer")%>%
-  select(analysis_mat_age)
-face_bmi <- BMI_face[[1]]
-flyer_bmi <- BMI_flyer[[1]]
-
-var.test(face_bmi,flyer_bmi)
+#### We preformed statistical analysis within the group against recruitment methods and tested mean, median, and variance.
+#BMI <- ds_some_rows_v1%>%
+#  select(analysis_mat_age,record_id)%>%
+#  filter(!is.na(analysis_mat_age))%>%
+#  slice(26:44)
+#
+#mean_bmi <- BMI[[1]]
+#mean(mean_bmi)
+#median(mean_bmi)
+#BMI_face <- ds_some_rows_v1%>%
+#  select(analysis_mat_age,learn_about_study)%>%
+#  filter(!is.na(analysis_mat_age))%>%
+#  slice(26:44)%>%
+#  filter(learn_about_study=="Facebook")%>%
+#  select(analysis_mat_age)
+#BMI_flyer <- ds_some_rows_v1%>%
+#  select(analysis_mat_age,learn_about_study)%>%
+#  filter(!is.na(analysis_mat_age))%>%
+#  slice(26:44)%>%
+#  filter(learn_about_study=="Flyer")%>%
+#  select(analysis_mat_age)
+#face_bmi <- BMI_face[[1]]
+#flyer_bmi <- BMI_flyer[[1]]
+#
+#var.test(face_bmi,flyer_bmi)
 ```
 
 #### Below we analyzed our Breastfeeding group against their BMI's and ages to test for any statistical significance between recruitment methods.
@@ -578,32 +582,33 @@ means <- aggregate(analysis_bmi ~  learn_about_study, Pre_BMI, mean)
 #formattable(Pre_BMI,asign=c("l","c","r"))
 ```
 
-####We preformed statistical analysis within the group against recruitment methods and tested mean, median, and variance.
+
 ```{r echo=FALSE, warning=FALSE}
-BMI <- ds_some_rows_v1%>%
-  select(analysis_bmi,record_id)%>%
-  filter(!is.na(analysis_bmi))%>%
-  slice(1:25)
-
-mean_bmi <- BMI[[1]]
-mean(mean_bmi)
-median(mean_bmi)
-BMI_face <- ds_some_rows_v1%>%
-  select(analysis_bmi,learn_about_study)%>%
-  filter(!is.na(analysis_bmi))%>%
-  slice(1:25)%>%
-  filter(learn_about_study=="Facebook")%>%
-  select(analysis_bmi)
-BMI_flyer <- ds_some_rows_v1%>%
-  select(analysis_bmi,learn_about_study)%>%
-  filter(!is.na(analysis_bmi))%>%
-  slice(1:25)%>%
-  filter(learn_about_study=="Flyer")%>%
-  select(analysis_bmi)
-face_bmi <- BMI_face[[1]]
-flyer_bmi <- BMI_flyer[[1]]
-
-var.test(face_bmi,flyer_bmi)
+####We preformed statistical analysis within the group against recruitment methods and tested mean, median, and variance.
+#BMI <- ds_some_rows_v1%>%
+#  select(analysis_bmi,record_id)%>%
+#  filter(!is.na(analysis_bmi))%>%
+#  slice(1:25)
+#
+#mean_bmi <- BMI[[1]]
+#mean(mean_bmi)
+#median(mean_bmi)
+#BMI_face <- ds_some_rows_v1%>%
+#  select(analysis_bmi,learn_about_study)%>%
+#  filter(!is.na(analysis_bmi))%>%
+#  slice(1:25)%>%
+#  filter(learn_about_study=="Facebook")%>%
+#  select(analysis_bmi)
+#BMI_flyer <- ds_some_rows_v1%>%
+#  select(analysis_bmi,learn_about_study)%>%
+#  filter(!is.na(analysis_bmi))%>%
+#  slice(1:25)%>%
+#  filter(learn_about_study=="Flyer")%>%
+#  select(analysis_bmi)
+#face_bmi <- BMI_face[[1]]
+#flyer_bmi <- BMI_flyer[[1]]
+#
+#var.test(face_bmi,flyer_bmi)
 ```
 
 #### We preformed the same analysis for breastfeeding mother's age. Our analysis is below.
@@ -637,30 +642,33 @@ Mat_age$learn_about_study <- as.factor(Mat_age$learn_about_study)
 #formattable(Mat_age,asign=c("l","c","r"))
 ```
 
-#### We preformed statistical analysis within the group against recruitment methods and tested mean, median, and variance.
+
 ```{r echo=FALSE, warning=FALSE}
-BMI <- ds_some_rows_v1%>%
-  select(analysis_mat_age,record_id)%>%
-  filter(!is.na(analysis_mat_age))%>%
-  slice(1:25)
-
-mean_bmi <- BMI[[1]]
-mean(mean_bmi)
-median(mean_bmi)
-BMI_face <- ds_some_rows_v1%>%
-  select(analysis_mat_age,learn_about_study)%>%
-  filter(!is.na(analysis_mat_age))%>%
-  slice(1:25)%>%
-  filter(learn_about_study=="Facebook")%>%
-  select(analysis_mat_age)
-BMI_flyer <- ds_some_rows_v1%>%
-  select(analysis_mat_age,learn_about_study)%>%
-  filter(!is.na(analysis_mat_age))%>%
-  slice(1:25)%>%
-  filter(learn_about_study=="Flyer")%>%
-  select(analysis_mat_age)
-face_bmi <- BMI_face[[1]]
-flyer_bmi <- BMI_flyer[[1]]
-
-var.test(face_bmi,flyer_bmi)
+#### We preformed statistical analysis within the group against #recruitment methods and tested mean, median, and variance.
+#BMI <- ds_some_rows_v1%>%
+#  select(analysis_mat_age,record_id)%>%
+#  filter(!is.na(analysis_mat_age))%>%
+#  slice(1:25)
+#
+#mean_bmi <- BMI[[1]]
+#
+#BMI_face <- ds_some_rows_v1%>%
+#  select(analysis_mat_age,learn_about_study)%>%
+#  filter(!is.na(analysis_mat_age))%>%
+#  slice(1:25)%>%
+#  filter(learn_about_study=="Facebook")%>%
+#  select(analysis_mat_age)
+#BMI_flyer <- ds_some_rows_v1%>%
+#  select(analysis_mat_age,learn_about_study)%>%
+#  filter(!is.na(analysis_mat_age))%>%
+#  slice(1:25)%>%
+#  filter(learn_about_study=="Flyer")%>%
+#  select(analysis_mat_age)
+#face_bmi <- BMI_face[[1]]
+#flyer_bmi <- BMI_flyer[[1]]
+#
+#m<-mean(mean_bmi)
+#me<-median(mean_bmi)
+#var.test(face_bmi,flyer_bmi)
+#
 ```
