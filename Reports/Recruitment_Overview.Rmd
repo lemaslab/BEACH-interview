@@ -240,6 +240,76 @@ h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
 #formattable(Encounter_per_time,align=c("l","c","r"))
 ```
 
+#### this figure shows our recrutiemtn over our 7 rounds of Facebook ads only. Tjis provides one of the most direct comparisions between recuitment times.
+```{r, echo=FALSE, warning=FALSE}
+
+#------------------------------------------
+  #creating the tables for each round of facebook add
+#------------------------------------------
+
+Encounter_per_time <- ds_some_rows_v1%>%
+  select(encounter_date_int,learn_about_study)
+
+round_1 <- Encounter_per_time%>%
+  separate(encounter_date_int,c("y","m","d"))%>%
+  filter(y=="2018", m>="03" & m<="05")
+
+round_2 <- Encounter_per_time%>%
+  separate(encounter_date_int,c("y","m","d"))%>%
+  filter(y=="2018", m>="05" & m<="08")
+
+round_3 <- Encounter_per_time%>%
+  separate(encounter_date_int,c("y","m","d"))%>%
+  filter(y=="2018", m>="11" & m<="11")
+
+round_4 <- Encounter_per_time%>%
+  separate(encounter_date_int,c("y","m","d"))%>%
+  filter(y=="2018", m>="11" & m<="12")
+
+round_5 <- Encounter_per_time%>%
+  separate(encounter_date_int,c("y","m","d"))%>%
+  filter(y=="2019", m>="02" & m<="02")
+
+round_6 <- Encounter_per_time%>%
+  separate(encounter_date_int,c("y","m","d"))%>%
+  filter(y=="2019", m>="04" & m<="05")
+
+round_7 <- Encounter_per_time%>%
+  separate(encounter_date_int,c("y","m","d"))%>%
+  filter(y=="2019", m>="09" & m<="10")
+
+r12<-bind_rows(round_1,round_2)
+r12<-bind_rows(r12,round_3)
+r12<-bind_rows(r12,round_4)
+r12<-bind_rows(r12,round_5)
+r12<-bind_rows(r12,round_6)
+r12<-bind_rows(r12,round_7)
+r12<- r12%>%
+  group_by(learn_about_study,y,m)%>%
+  summarize(count=n())%>%
+  unite("date",c("y","m"),sep="-")
+
+theme_set(theme_classic())
+
+# distribution of visits each month(histogram)
+h <- ggplot(r12, aes(date, count)) + scale_fill_brewer(palette = "Spectral")
+h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
+                   bins=24,
+                   col="black", 
+                   size=.1) + # change number of bins
+  #geom_text(aes(y=label_count,label=count), vjust=-.02) +  #doesn't work properly because cummulative sums aren't calulated 
+  # geom_density() + #this function is meant to draw a trend line for the graph
+  # stat_bin(aes(y=count,label=count),geom="text",vjust=-.5) +   # this will display the total count of each bin
+  labs(title="How participants heard of our study monthly", 
+       subtitle="from july of 2017-January 2019 during Facebook ads",
+       x="Date(Year-Month)",
+       y="Count",
+       fill="How did you learn about the study") +
+  theme(axis.text.x = element_text(angle=70, vjust =.6))
+
+
+```
+
 
 # Demographics
 
