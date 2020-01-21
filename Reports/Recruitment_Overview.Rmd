@@ -107,14 +107,12 @@ ds_some_rows_v1=ds_some_rows_v1 %>%
   mutate(consent_complete = recode(int_consent_complete, "1"="Consented","0"="not Consented","NA"="Did not respond"))
 
 ```
-# Recruitment overview
 
-##### One of the major reasons for research delay has been recruitment issues. 9 out of 10 trials require the original timeline to be extended due to lack of participants. The problem with recruitment stems from a lack of innovation within the field and use of out of date practices. However, new methods have arisen that can prove to be a solution to the issues with current recruitment methods. The use of Facebook for recruitment solves the problems of participant targeting and recruitment rates. Within the BEACH Interview study, we recruited both through flyers and Facebook; however, to truly test the effectiveness of the Facebook method against the traditional method of flyers, we only conducted an ad for discrete periods of time. Following the study's completion, we analyzed our recruitment and found statistically significant differences between our two groups: pregnant and breastfeeding moms.
+##### One of the major reasons for research delay has been recruitment issues. 9 out of 10 trials require the original timeline to be extended due to lack of participants. The problem with recruitment stems from a lack of innovation within the field and use of out of date practices. However, new methods have arisen that can prove to be a solution to the issues with current recruitment methods. The use of Facebook for recruitment solves the problems of participant targeting, recruitment rates, and retention. Within the BEACH Interview study, we recruited both through flyers and Facebook; however, we only conducted an ad for discrete periods of time for Facebook. Following the study's completion, we analyzed our recruitment and found statistically significant differences between our two groups: pregnant and breastfeeding moms.
 
 #### The Objectives of this study are to:
-#### 1.) Preform exploratory data analysis to discover statistically significant difference between traditional and modern recruitment methods.
-#### 2.) preform similar analysis on the BEACH study to prove support the analysis found in this study.
-#### 3.) Confirm analysis on the BEACH study to prove support the analysis found in this study.
+#### 1.) Preform exploratory data analysis to discover statistically significant difference between traditional and modern recruitment methods. Areas of focus are recruitment rate, participant retention, and targeting.
+#### 2.) preform similar analysis on the BEACH study to prove support the analysis found.
 
 #### Below we have the numbers of participants we recruited per quarter broken down by how they heard of our study. We show both screened and consented participants over the course of the study.
 
@@ -259,8 +257,8 @@ tester <- prop.test(x=c(12,22),n=c(23,35))
 |:--------|:--------:|:-------:|:--------:|:-------:|------:|
 |Facebook |     23   |   15    |  0.52    |   0.29  |  0.59 |
 |Flyer    |     35   |   22    |  0.63    |   0.29  |  0.59 |
-
-#### this figure shows our recrutiemtn over our 7 rounds of Facebook ads only. Tjis provides one of the most direct comparisions between recuitment times.
+## Recruitment over Facebook Ad activity
+#### this figure shows our recruitment over our 7 rounds of Facebook ads only. This provides one of the most direct comparisions between recruitment methods.
 ```{r, echo=FALSE, warning=FALSE}
 
 #------------------------------------------
@@ -412,7 +410,7 @@ means <- aggregate(analysis_bmi ~  learn_about_study, Pre_BMI, mean)
 #formattable(Pre_BMI,asign=c("l","c","r"))
 ```
 
-#### These tables review our recruitment between BMI groups (overweight and normal weight):
+#### These tables below review our recruitment between BMI groups (overweight and normal weight):
 
 
 ```{r echo=FALSE, warning=FALSE}
@@ -553,10 +551,10 @@ Mat_age$learn_about_study <- as.factor(Mat_age$learn_about_study)
 #
 #var.test(face_bmi,flyer_bmi)
 ```
-
+## Review per Group
 #### Following a review of the entire study we reviewed our two groups of interest: pregnant and breastfeeding.
 
-#### Below we analyzed our pregnant group first against their BMI's and ages to test for any statistical significance between recruitment methods.
+### Pregnant Mothers
 
 #### we first reviewed the particiapnts BMI.
 
@@ -691,7 +689,7 @@ Mat_age$learn_about_study <- as.factor(Mat_age$learn_about_study)
 #var.test(face_bmi,flyer_bmi)
 ```
 
-#### Below we analyzed our Breastfeeding group against their BMI's and ages to test for any statistical significance between recruitment methods.
+### Breastfeeding mothers
 
 #### we first reviewed the participants BMI.
 
