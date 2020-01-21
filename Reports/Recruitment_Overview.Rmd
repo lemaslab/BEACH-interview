@@ -165,7 +165,7 @@ Totals <- ds_some_rows_v1%>%
   select(learn_about_study)%>%
   group_by(learn_about_study)%>%
   summarize(count=n())%>%
-  rename("how did you hear about us?"=learn_about_study,"Total"=count)
+  rename("how did you hear about us?"=learn_about_study,"Total(n=103)"=count)
 
 formattable(Totals, align =c("l","r"))
 
@@ -240,6 +240,26 @@ h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
 #formattable(Encounter_per_time,align=c("l","c","r"))
 ```
 
+```{r echo=FALSE, warning=FALSE}
+Totals <- ds_some_rows_v1%>%
+  select(learn_about_study, consent_complete)%>%
+  filter(consent_complete=="Consented")%>%
+  group_by(learn_about_study)%>%
+  summarize(count=n())%>%
+  rename("how did you hear about us?"=learn_about_study,"Total(n=47)"=count)
+
+formattable(Totals, align =c("l","r"))
+
+tester <- prop.test(x=c(12,22),n=c(23,35))
+
+```
+#### results after preforming a proportions test on encounters for Facebook and Flyers by their consents.There is no statsitical signifigance between Facebook and Flyers on consented participants.
+
+|Encounter|Encoutners|Consented|Proportion|X-sqaured|P-value|
+|:--------|:--------:|:-------:|:--------:|:-------:|------:|
+|Facebook |     23   |   15    |  0.52    |   0.29  |  0.59 |
+|Flyer    |     35   |   22    |  0.63    |   0.29  |  0.59 |
+
 #### this figure shows our recrutiemtn over our 7 rounds of Facebook ads only. Tjis provides one of the most direct comparisions between recuitment times.
 ```{r, echo=FALSE, warning=FALSE}
 
@@ -249,6 +269,8 @@ h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
 
 Encounter_per_time <- ds_some_rows_v1%>%
   select(encounter_date_int,learn_about_study)
+
+Encounter_per_time$encounter_date_int <- as.Date(Encounter_per_time$encounter_date_int, format= "%Y-%m-%d")
 
 round_1 <- Encounter_per_time%>%
   separate(encounter_date_int,c("y","m","d"))%>%
@@ -278,21 +300,49 @@ round_7 <- Encounter_per_time%>%
   separate(encounter_date_int,c("y","m","d"))%>%
   filter(y=="2019", m>="09" & m<="10")
 
+my_data <- data.frame(encounter_date_int = seq(as.Date("2017-01-01"), as.Date("2019-12-31"), 
+  by = "1 month"), format= "%Y-%m-%d")
+
 r12<-bind_rows(round_1,round_2)
 r12<-bind_rows(r12,round_3)
 r12<-bind_rows(r12,round_4)
 r12<-bind_rows(r12,round_5)
 r12<-bind_rows(r12,round_6)
 r12<-bind_rows(r12,round_7)
-r12<- r12%>%
-  group_by(learn_about_study,y,m)%>%
+
+r12<-r12%>%
+  unite("encounter_date_int",c("y","m","d"),sep = "-")
+r12$encounter_date_int <- as.Date(r12$encounter_date_int, format= "%Y-%m-%d")
+
+
+
+
+my_complete <- full_join(my_data, r12, by = "encounter_date_int")
+
+r13 <- my_complete%>%
+  separate(encounter_date_int,c("y","m","d"))%>%
+  mutate(Quarter = case_when(
+    m == "01" | m == "02" | m == "03" ~ "Q1",
+    m == "04" | m == "05" | m == "06" ~ "Q2",
+    m == "07" | m == "08" | m == "09" ~ "Q3",
+    m == "10" | m == "11" | m == "12" ~ "Q4",
+    TRUE~"Q5"))%>%
+  group_by(learn_about_study,y,Quarter)%>%
   summarize(count=n())%>%
-  unite("date",c("y","m"),sep="-")
+  unite("YQ",c("y",Quarter),sep ="-")
+
+
+
+
+#r13<- r12%>%
+#  group_by(learn_about_study,y,m)%>%
+#  summarize(count=n())%>%
+#  unite("date",c("y","m"),sep="-")
 
 theme_set(theme_classic())
 
 # distribution of visits each month(histogram)
-h <- ggplot(r12, aes(date, count)) + scale_fill_brewer(palette = "Spectral")
+h <- ggplot(r13, aes(YQ, count)) + scale_fill_brewer(palette = "Spectral")
 h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
                    bins=24,
                    col="black", 
@@ -300,16 +350,27 @@ h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
   #geom_text(aes(y=label_count,label=count), vjust=-.02) +  #doesn't work properly because cummulative sums aren't calulated 
   # geom_density() + #this function is meant to draw a trend line for the graph
   # stat_bin(aes(y=count,label=count),geom="text",vjust=-.5) +   # this will display the total count of each bin
-  labs(title="How participants heard of our study monthly", 
-       subtitle="from july of 2017-January 2019 during Facebook ads",
-       x="Date(Year-Month)",
+  labs(title="How particpants heard of study", 
+       subtitle="During active Facebook recruitment",
+       x="Date(Year-Quarter)",
        y="Count",
        fill="How did you learn about the study") +
   theme(axis.text.x = element_text(angle=70, vjust =.6))
 
 
 ```
+```{r echo=FALSE, warning=FALSE}
+Totals <- r12%>%
+  select(learn_about_study)%>%
+  group_by(learn_about_study)%>%
+  summarize(count=n())%>%
+  rename("how did you hear about us?"=learn_about_study,"Total(n=72)"=count)
 
+formattable(Totals, align =c("l","r"))
+
+tester <- prop.test(x=c(12,22),n=c(23,35))
+
+```
 
 # Demographics
 
@@ -352,6 +413,7 @@ means <- aggregate(analysis_bmi ~  learn_about_study, Pre_BMI, mean)
 ```
 
 #### These tables review our recruitment between BMI groups (overweight and normal weight):
+
 
 ```{r echo=FALSE, warning=FALSE}
 
@@ -405,9 +467,11 @@ formattable(normal_sum, align =c("l","r"))
 #formattable(over_sum, align =c("l","r"))
 ```
 
+#### Below is a calculation of the mean median and varaince of BMI for all consented particpants. 
 
-
-
+|  n=44   |   mean   |  median |F-test value| p-value |
+|:--------|:--------:|:-------:|:----------:|:-------:|
+|BMI      |  25.43   |   23    |  2.61      |   0.05  |
 ```{r echo=FALSE, warning=FALSE}
 #### Below is a tabulation of the mean, median, and variance between Facebook and flyers to test for any statistical significance. blow represents mean, median, and an F-test to test for variance.
 #BMI <- ds_some_rows_v1%>%
@@ -463,8 +527,11 @@ Mat_age$learn_about_study <- as.factor(Mat_age$learn_about_study)
   
 #formattable(Mat_age,asign=c("l","c","r"))
 ```
+#### Below we have the calcualtion of the mean median and variance of all consented parrticpants for age.
 
-
+|  n=44   |   mean   |  median |F-test value| p-value |
+|:--------|:--------:|:-------:|:----------:|:-------:|
+|Age      |  30.68   |   32    |  0.52      |   0.22  |
 ```{r echo=FALSE, warning=FALSE}
 #### Below we have the statistics of age.
 #BMI <- ds_some_rows_v1%>%
@@ -525,6 +592,11 @@ means <- aggregate(analysis_bmi ~  learn_about_study, Pre_BMI, mean)
 
 #formattable(Pre_BMI,asign=c("l","c","r"))
 ```
+#### Below is the calculation of the mean median and variance of the pregnant groups BMI.
+
+|  n=19   |   mean   |  median |F-test value| p-value |
+|:--------|:--------:|:-------:|:----------:|:-------:|
+|BMI      |  26.65   |   23    |  3.55      |   0.10  |
 
 
 ```{r echo=FALSE, warning=FALSE}
@@ -555,7 +627,7 @@ means <- aggregate(analysis_bmi ~  learn_about_study, Pre_BMI, mean)
 #var.test(face_bmi,flyer_bmi)
 ```
 
-#### We preformed the same review for our pregnant mothers' groups.
+#### We preformed the same review for their age.
 
 ```{r, echo=FALSE ,fig.cap= "Fig9: Participant Age"}
 #select all the maternal ages and remove NA values:
@@ -576,7 +648,7 @@ Mat_age$learn_about_study <- as.factor(Mat_age$learn_about_study)
   # Plot
   g <- ggplot(Mat_age, aes(learn_about_study, analysis_mat_age))
   g + geom_boxplot(varwidth=T, fill="plum") + 
-      labs(title="Age of Participants", 
+      labs(title="Age of Pregnant Participants", 
            subtitle="Divided into how they heard of the study",
            caption="Source: BEACH Interview",
            x="How did you hear of our study",
@@ -585,7 +657,11 @@ Mat_age$learn_about_study <- as.factor(Mat_age$learn_about_study)
   
 #formattable(Mat_age,asign=c("l","c","r"))
 ```
+#### Below is the calcuation of the mean median and variance of the ages for our pregnant group.
 
+|  n=19   |   mean   |  median |F-test value| p-value |
+|:--------|:--------:|:-------:|:----------:|:-------:|
+|Age      |  30.58   |   31    |  1.38      |   0.60  |
 
 ```{r echo=FALSE, warning=FALSE}
 #### We preformed statistical analysis within the group against recruitment methods and tested mean, median, and variance.
@@ -651,6 +727,11 @@ means <- aggregate(analysis_bmi ~  learn_about_study, Pre_BMI, mean)
 
 #formattable(Pre_BMI,asign=c("l","c","r"))
 ```
+#### below we calculated our groups mean median and variance for their BMI.
+
+|  n=25   |   mean   |  median |F-test value| p-value |
+|:--------|:--------:|:-------:|:----------:|:-------:|
+|BMI      |  24.50   |   23    |  10.33     |   0.05  |
 
 
 ```{r echo=FALSE, warning=FALSE}
@@ -711,7 +792,11 @@ Mat_age$learn_about_study <- as.factor(Mat_age$learn_about_study)
   
 #formattable(Mat_age,asign=c("l","c","r"))
 ```
+#### below we calculated our groups mean median and variance for their age.
 
+|  n=25   |   mean   |  median |F-test value| p-value |
+|:--------|:--------:|:-------:|:----------:|:-------:|
+|Age      |  30.77   |   32    |  0.27      |   0.64  |
 
 ```{r echo=FALSE, warning=FALSE}
 #### We preformed statistical analysis within the group against #recruitment methods and tested mean, median, and variance.
