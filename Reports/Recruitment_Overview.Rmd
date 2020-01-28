@@ -266,7 +266,7 @@ tester <- prop.test(x=c(12,22),n=c(23,35))
 #------------------------------------------
 
 Encounter_per_time <- ds_some_rows_v1%>%
-  select(encounter_date_int,learn_about_study)
+  select(encounter_date_int,learn_about_study, record_id)
 
 Encounter_per_time$encounter_date_int <- as.Date(Encounter_per_time$encounter_date_int, format= "%Y-%m-%d")
 
@@ -357,6 +357,9 @@ h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
 
 
 ```
+
+#### Proportion of participants recruited during the time of Facebook ads
+
 ```{r echo=FALSE, warning=FALSE}
 Totals <- r12%>%
   select(learn_about_study)%>%
@@ -369,6 +372,49 @@ formattable(Totals, align =c("l","r"))
 tester <- prop.test(x=c(12,22),n=c(23,35))
 
 ```
+
+#### Proportion of participants Consented during Facebook ads running and a review of their BMI 
+```{r echo=FALSE, warning=FALSE}
+temp <- ds_some_rows_v1%>%
+  select(encounter_date_int, consent_complete, record_id, analysis_bmi)%>%
+  filter(consent_complete=="Consented")
+
+dataTest <- inner_join(temp, r12, by = "record_id")
+temp<- unique(dataTest)
+
+tester<- temp%>%
+  select(learn_about_study)%>%
+  group_by(learn_about_study)%>%
+  summarize(count=n())%>%
+  rename("how did you hear about us?"=learn_about_study,"Total(n=24)"=count)
+
+formattable(tester, align =c("l","r"))
+
+temp$learn_about_study <- as.factor(temp$learn_about_study)
+
+    library(ggplot2)
+  theme_set(theme_classic())
+  
+  # Plot
+means <- aggregate(analysis_bmi ~  learn_about_study, temp, mean)
+
+  
+  g <- ggplot(temp, aes(learn_about_study, analysis_bmi))
+  g + geom_boxplot(varwidth=T, fill="plum") + 
+      labs(title="BMI of participants", 
+           subtitle="Divided into how they heard of the study",
+           caption="Source: BEACH Interview",
+           x="How did you hear of our study",
+           y="BMI")+
+    geom_text(data = means, aes(label = analysis_bmi, y = analysis_bmi + 0.08))
+
+
+```
+#### Review of the mean median and F-test of only participants recruited during the Facebook ads cycle
+
+|  n=24   |   mean   |  median |F-test value| p-value |
+|:--------|:--------:|:-------:|:----------:|:-------:|
+|BMI      |  25.64   |   23    |  7.15      |  0.002  |
 
 # Demographics
 
@@ -407,7 +453,6 @@ means <- aggregate(analysis_bmi ~  learn_about_study, Pre_BMI, mean)
     geom_text(data = means, aes(label = analysis_bmi, y = analysis_bmi + 0.08))
 
 
-#formattable(Pre_BMI,asign=c("l","c","r"))
 ```
 
 #### These tables below review our recruitment between BMI groups (overweight and normal weight):
