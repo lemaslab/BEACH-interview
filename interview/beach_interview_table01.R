@@ -3,11 +3,13 @@
 # ***************                Project Overview              *************** #
 # **************************************************************************** #
 
-# Author:      Dominick Lemas 
-# Date:        May 07, 2019 
-# Project:     BEACH Interview
-# Description: Data Analysis for Paper 1- Table 01
-
+# Author:             Dominick Lemas 
+# START  Date:        May 07, 2019 
+# REVISE Date:        Mar 25, 2020
+# Project:            BEACH Interview
+# Description:        Data Analysis for Paper #1- Table 01
+# Note:               Revisions suggested by BMC Pregnancy and Childbirth
+#                     -break out data by study group and include biological samples
 
 # **************************************************************************** #
 # ***************                Library                       *************** #
@@ -53,7 +55,7 @@ desired_fields_v1 <- c("record_id","int_study_grp","interphone_date","int_consen
                        "see_flyer_int", "flyer_other_int", "ufhealth_clinic_int","beach_interview_study_encounters_complete",
                        "analysis_mat_age", "analysis_mat_age_cats", "analysis_mat_age_source", "analysis_bmi",
                        "analysis_bmi_cats", "analysis_bmi_source", "mom3t_education_2", "analysis_research_expr",
-                       "analysis_kids_previous", "analysis_time_of_day","int_guide_stoolcollect")
+                       "analysis_kids_previous", "analysis_time_of_day","int_guide_stoolcollect","analysis_income")
 
 # pull data
 interview <- redcap_read(
@@ -66,6 +68,7 @@ interview <- redcap_read(
 # check data pull
 str(interview)
 interview[1]
+unique(interview$record_id)
 
 # rename data
 dat=interview
@@ -78,38 +81,146 @@ dat$interphone_date=as.Date(dat$interphone_date, "%Y-%m-%d")
 dat$encounter_date_int=as.Date(dat$encounter_date_int, "%Y-%m-%d")
 dat$biosample_collection_date=as.Date(dat$biosample_collection_date, "%Y-%m-%d")
 
+# recode
+dat.1=dat%>%mutate(analysis_income_cats=recode(analysis_income,"1"="0","2"="0","3"="0",  # combine 0-37K 
+                                   "4"="2","5"="2","6"="2",
+                                   "7"="2","8"="2","9"="3",
+                                   "10"="NA")) 
+
 # how many have completed the interview
-complete=dat %>%
+complete=dat.1 %>%
   filter(int_interview_complete==1)%>%
   pull(record_id)
 length(complete) # 40
 
 # limit data to include only interview participants (n=40)
-dat.c=dat %>%
-  filter(int_interview_complete==1)
+# and variables for table 01. 
+dat.c=dat.1 %>%
+  filter(int_interview_complete==1)%>%
+  select(record_id,redcap_repeat_instrument,redcap_repeat_instance,int_study_grp,
+         int_audio_length_min,analysis_mat_age_cats,analysis_bmi_cats,mom3t_education_2,
+         analysis_research_expr,analysis_kids_previous,int_guide_stoolcollect,analysis_income,analysis_income_cats)
 
-names(dat.c)  
-length(dat.c) # 40
-
-# table 1. 
+# check 
 names(dat.c)
 str(dat.c)
-# convert group variable to factor (1=pregnant, 2=breastfeeding)
-dat.c$int_study_grp=as.factor(dat.c$int_study_grp)
+
+# Create factor variable 
+#-----------------------
+dat.c$int_study_grp=as.factor(dat.c$int_study_grp)   # study_group: (1=pregnant, 2=breastfeeding)
 
 # range of interview audio
 range(dat.c$int_audio_length_min)  #24 81
 mean(dat.c$int_audio_length_min)  # 46.65
 sd(dat.c$int_audio_length_min)  # 12.43764
 
-# distribution of maternal age categories 
-# (1, <20 | 2, 20-30 | 3, 31-40 | 4, >40)
-range(dat.c$analysis_mat_age) # 21 39
+# **************************************************************************** #
+# MATERNAL AGE                      
+# categories: 1, <20 | 2, 20-30 | 3, 31-40 | 4, >40
+# **************************************************************************** #
+
+# ALL
+#----
 dat.c %>% 
   select(analysis_mat_age_cats) %>% 
   group_by(analysis_mat_age_cats) %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
+
+# Group
+#---------
+dat.c %>% 
+  select(int_study_grp, analysis_mat_age_cats) %>% 
+  group_by(int_study_grp, analysis_mat_age_cats) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
+
+# chiq.test
+age.test=chisq.test(dat.c$int_study_grp,dat.c$analysis_mat_age_cats)
+tidy(age.test)
+
+# **************************************************************************** #
+# PREVIOUS CHILDREN                      
+# categories: 1, yes | 0, no
+# **************************************************************************** #
+
+# ALL
+#----
+dat.c %>% 
+  select(int_study_grp,analysis_kids_previous) %>% 
+  group_by(analysis_kids_previous) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
+
+# Group
+#---------
+dat.c %>% 
+  select(int_study_grp, analysis_kids_previous) %>% 
+  group_by(int_study_grp, analysis_kids_previous) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
+
+# chiq.test
+kid.test=chisq.test(dat.c$int_study_grp,dat.c$analysis_kids_previous)
+tidy(kid.test)
+
+# **************************************************************************** #
+# MATERNAL EDUCATION                      
+# categories: 1, <8th grade | 2, Some high school | 3, High school diploma/GED 
+# 4, Some college or community college | 5, Associates degree | 
+# 6, Completed tech or vocational school | 7, College graduate | 
+# 8, Some graduate or professional school | 9, Graduate/professional degree
+# **************************************************************************** #
+
+# ALL
+#----
+dat.c %>% 
+  select(int_study_grp,mom3t_education_2) %>% 
+  group_by(mom3t_education_2) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
+
+# Group
+#---------
+dat.c %>% 
+  select(int_study_grp, mom3t_education_2) %>% 
+  group_by(int_study_grp, mom3t_education_2) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
+
+# chiq.test
+edu.test=chisq.test(dat.c$int_study_grp,dat.c$mom3t_education_2)
+tidy(edu.test)
+
+# **************************************************************************** #
+# HOUSEHOLD INCOME                      
+# categories: 1, 0 to $15,000 | 2, $15,001 to $19,000 | 3, $19,001 to $37,000  
+# 4, $37,001 to $44,000 | 5, $44,001 to $52,000 | 6, $52,001 to $56,000 |   
+# 7, $56,001 to $67,000 | 8, $67,001 to $79,000 | 9, $79,001 or more | 10, missing
+# **************************************************************************** #
+
+# ALL
+#----
+dat.c %>% 
+  select(int_study_grp,analysis_income) %>% 
+  mutate(analysis_income_cats=recode(analysis_income,"1"="0","2"="0","3"="0",  # combine 0-37K 
+                                                     "4"="2","5"="2","6"="2",
+                                                     "7"="2","8"="2","9"="3",
+                                                     "10"="NA")) %>%
+  group_by(analysis_income_cats) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
+
+# Group
+#---------
+dat.c %>% 
+  select(int_study_grp, analysis_income_cats) %>% 
+  group_by(int_study_grp, analysis_income_cats) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
+
+
+
 
 # distribution of maternal bmi categories 
 # (1, <25 | 2, 25-30 | 3, >30)
@@ -120,16 +231,7 @@ dat.c %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
-# # distribution of maternal education categories 
-# 1, <8th grade | 2, Some high school | 3, High school diploma/GED 
-# 4, Some college or community college | 5, Associates degree | 
-# 6, Completed tech or vocational school | 7, College graduate | 
-# 8, Some graduate or professional school | 9, Graduate/professional degree
-dat.c %>% 
-  select(mom3t_education_2) %>% 
-  group_by(mom3t_education_2) %>%
-  summarise (n = n()) %>%
-  mutate(freq = n / sum(n))
+
 
 # distribution of previous research experience 
 # 1, yes | 0, no
@@ -139,21 +241,9 @@ dat.c %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
-# distribution of previous children 
-# 1, yes | 0, no
-dat.c %>% 
-  select(analysis_kids_previous) %>% 
-  group_by(analysis_kids_previous) %>%
-  summarise (n = n()) %>%
-  mutate(freq = n / sum(n))
 
-# distribution of previous children 
-# 1, yes | 0, no
-dat.c %>% 
-  select(analysis_kids_previous) %>% 
-  group_by(analysis_kids_previous) %>%
-  summarise (n = n()) %>%
-  mutate(freq = n / sum(n))
+
+
 
 # distribution of previous stool collection "int_guide_stoolcollect" 
 # 1, yes | 0, no
