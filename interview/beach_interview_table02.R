@@ -57,7 +57,8 @@ desired_fields_v1 <- c("record_id","int_study_grp","interphone_date","int_consen
                        "analysis_bmi_cats", "analysis_bmi_source", "mom3t_education_2", "analysis_research_expr",
                        "analysis_kids_previous", "analysis_time_of_day","int_guide_transportation",
                        "int_guide_stoolcollect", "int_guide_studylength", "int_guide_visitlength", "int_guide_visitlength",
-                       "int_guide_reminders","int_guide_contactby","int_guide_advanceremind")
+                       "int_guide_reminders","int_guide_contactby","int_guide_advanceremind","int_guide_timeofday",
+                       "int_guide_contactby")
 
 # pull data
 interview <- redcap_read(
@@ -113,8 +114,18 @@ dat$study_visit_time_cats[dat$int_guide_visitlength>=31 & dat$int_guide_visitlen
 dat$study_visit_time_cats[dat$int_guide_visitlength>=61 & dat$int_guide_visitlength<=90] <- "3"
 dat$study_visit_time_cats[dat$int_guide_visitlength>91] <- "4"
 
+# contact method
+#---------------
+dat$int_guide_contactby
 
-table(dat$study_visit_time_cats)
+int_guide_contactby___1                   
+int_guide_contactby___2                  
+int_guide_contactby___3                   
+int_guide_contactby___4 
+
+# advance reminder
+#----------------
+int_guide_advanceremind
 
 
 
@@ -124,7 +135,8 @@ dat.c=dat %>%
   filter(int_interview_complete==1) %>%
   select(record_id,redcap_repeat_instrument,redcap_repeat_instance,int_study_grp,
          int_guide_studylength,study_length_cats,int_guide_transportation,study_visit_cats,
-         int_guide_visitlength,study_visit_time_cats)
+         int_guide_visitlength,study_visit_time_cats, int_guide_timeofday,int_guide_reminders,
+         int_guide_timeofday,int_guide_advanceremind)
 
 # check 
 names(dat.c)
@@ -225,36 +237,86 @@ dat.c %>%
 visit_time.test=chisq.test(dat.c$int_study_grp,dat.c$study_visit_time_cats)
 tidy(visit_time.test)
 
+# ****************************************************************** #
+# VISIT TIME OF DAY          
+# categories: 1, morning | 2, lunchtime | 3, afternoon | 4, evening
+# ****************************************************************** #
 
-# distribution of stuy visit time of day categories 
-# (1, morning | 2, lunchtime | 3, afternoon)
-names(dat.c)
+# ALL
+#----
 dat.c %>% 
-  select(record_id,analysis_time_of_day___1,analysis_time_of_day___2,analysis_time_of_day___3) %>% 
-  rename(morning=analysis_time_of_day___1, lunchtime=analysis_time_of_day___2,afternoon=analysis_time_of_day___3) %>%
-  gather(time_of_day, value, morning:afternoon) %>%
-  group_by(time_of_day) %>%
-  summarise(count = sum(value)) %>%
-  mutate(prop = prop.table(count))
+  select(int_guide_timeofday) %>% 
+  group_by(int_guide_timeofday) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
 
-# distribution of study reminders 
-# 1, yes | 0, no
+# Group
+#---------
+dat.c %>% 
+  select(int_study_grp, int_guide_timeofday) %>% 
+  group_by(int_study_grp, int_guide_timeofday) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
+
+# chiq.test
+visit_time_day.test=chisq.test(dat.c$int_study_grp,dat.c$int_guide_timeofday)
+tidy(visit_time_day.test)
+
+# ****************************************************************** #
+# STUDY REMINDERS          
+# categories: 1, yes | 0, no
+# ****************************************************************** #
+
+# ALL
+#----
 dat.c %>% 
   select(int_guide_reminders) %>% 
   group_by(int_guide_reminders) %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
-# distribution of prefered contact method 
-# (1, text message | 2, phone call | 3, email | 4, by mail)
-names(dat.c)
+# Group
+#---------
 dat.c %>% 
-  select(record_id,int_guide_contactby___1,int_guide_contactby___2,int_guide_contactby___3,int_guide_contactby___4) %>% 
-  rename(text_message=int_guide_contactby___1, phone_call=int_guide_contactby___2,email=int_guide_contactby___3, mail=int_guide_contactby___4) %>%
-  gather(method, value, text_message:mail) %>%
-  group_by(method) %>%
-  summarise(count = sum(value)) %>%
-  mutate(prop = prop.table(count))
+  select(int_study_grp, int_guide_reminders) %>% 
+  group_by(int_study_grp, int_guide_reminders) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
+
+# chiq.test
+visit_reminder.test=chisq.test(dat.c$int_study_grp,dat.c$int_guide_reminders)
+tidy(visit_reminder.test)
+
+# ****************************************************************** #
+# PREFERED CONTACT         
+# categories: 1, text message | 2, phone call | 3, email | 4, by mail
+# ****************************************************************** #
+# ALL
+#----
+dat.c %>% 
+  select(int_guide_contactby) %>% 
+  group_by(int_guide_contactby) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
+
+# Group
+#---------
+dat.c %>% 
+  select(int_study_grp, int_guide_reminders) %>% 
+  group_by(int_study_grp, int_guide_reminders) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
+
+# chiq.test
+visit_reminder.test=chisq.test(dat.c$int_study_grp,dat.c$int_guide_reminders)
+tidy(visit_reminder.test)
+
+
+# ****************************************************************** #
+# advanced reminders (days)         
+
+# ****************************************************************** #
+
 
 # range of advanced reminders (days)
 range(dat.c$int_guide_advanceremind, na.rm=T)  # 1 30
