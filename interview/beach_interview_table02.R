@@ -3,11 +3,13 @@
 # ***************                Project Overview              *************** #
 # **************************************************************************** #
 
-# Author:      Dominick Lemas 
-# Date:        June 25, 2019 
-# Project:     BEACH Interview
-# Description: Data Analysis for Paper #1- Table 02
-
+# Author:             Dominick Lemas 
+# START  Date:        June 25, 2019 
+# REVISE Date:        Mar  25, 2020
+# Project:            BEACH Interview
+# Description:        Data Analysis for Paper #1- Table 02
+# Note:               Revisions suggested by BMC Pregnancy and Childbirth
+#                     -break out data by study group and include biological samples
 
 # **************************************************************************** #
 # ***************                Library                       *************** #

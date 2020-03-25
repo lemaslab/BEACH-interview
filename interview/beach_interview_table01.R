@@ -82,9 +82,13 @@ dat$encounter_date_int=as.Date(dat$encounter_date_int, "%Y-%m-%d")
 dat$biosample_collection_date=as.Date(dat$biosample_collection_date, "%Y-%m-%d")
 
 # recode
-dat.1=dat%>%mutate(analysis_income_cats=recode(analysis_income,"1"="0","2"="0","3"="0",  # combine 0-37K 
-                                   "4"="2","5"="2","6"="2",
-                                   "7"="2","8"="2","9"="3",
+# income_cats
+# categories: 1, 0 to $15,000 | 2, $15,001 to $19,000 | 3, $19,001 to $37,000  
+# 4, $37,001 to $44,000 | 5, $44,001 to $52,000 | 6, $52,001 to $56,000 |   
+# 7, $56,001 to $67,000 | 8, $67,001 to $79,000 | 9, $79,001 or more | 10, missing
+dat.1=dat%>%mutate(analysis_income_cats=recode(analysis_income,"1"="1","2"="1","3"="1",  # 1, 0-37K 
+                                   "4"="2","5"="2","6"="2",                              # 2, 37K-79K
+                                   "7"="2","8"="2","9"="3",                              # 3, 79K or more
                                    "10"="NA")) 
 
 # how many have completed the interview
@@ -194,19 +198,13 @@ tidy(edu.test)
 
 # **************************************************************************** #
 # HOUSEHOLD INCOME                      
-# categories: 1, 0 to $15,000 | 2, $15,001 to $19,000 | 3, $19,001 to $37,000  
-# 4, $37,001 to $44,000 | 5, $44,001 to $52,000 | 6, $52,001 to $56,000 |   
-# 7, $56,001 to $67,000 | 8, $67,001 to $79,000 | 9, $79,001 or more | 10, missing
+# categories: 1, 0 to $37,000 | 2, $37,001 to $79,000 | 3, 79,001 or more | 4, missing
 # **************************************************************************** #
 
 # ALL
 #----
 dat.c %>% 
-  select(int_study_grp,analysis_income) %>% 
-  mutate(analysis_income_cats=recode(analysis_income,"1"="0","2"="0","3"="0",  # combine 0-37K 
-                                                     "4"="2","5"="2","6"="2",
-                                                     "7"="2","8"="2","9"="3",
-                                                     "10"="NA")) %>%
+  select(int_study_grp,analysis_income_cats) %>% 
   group_by(analysis_income_cats) %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
@@ -219,41 +217,84 @@ dat.c %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
+# chiq.test
+income.test=chisq.test(dat.c$int_study_grp,dat.c$analysis_income_cats)
+tidy(income.test)
 
+# **************************************************************************** #
+# MATERNAL BMI                      
+# categories: 1, <25 | 2, 25-30 | 3, >30
+# **************************************************************************** #
 
-
-# distribution of maternal bmi categories 
-# (1, <25 | 2, 25-30 | 3, >30)
-range(dat.c$analysis_bmi) # 18.5 48.1
+# All
+#----
 dat.c %>% 
-  select(analysis_bmi_cats) %>% 
+  select(int_study_grp,analysis_bmi_cats) %>% 
   group_by(analysis_bmi_cats) %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
+# Group
+#---------
+dat.c %>% 
+  select(int_study_grp, analysis_bmi_cats) %>% 
+  group_by(int_study_grp, analysis_bmi_cats) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
 
+# chiq.test
+bmi.test=chisq.test(dat.c$int_study_grp,dat.c$analysis_bmi_cats)
+tidy(bmi.test)
 
-# distribution of previous research experience 
-# 1, yes | 0, no
+# **************************************************************************** #
+# PREVIOUS RESEARCH                       
+# categories: 1, yes | 0, no
+# **************************************************************************** #
+
+# All
+#----
 dat.c %>% 
   select(analysis_research_expr) %>% 
   group_by(analysis_research_expr) %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
+# Group
+#---------
+dat.c %>% 
+  select(int_study_grp, analysis_research_expr) %>% 
+  group_by(int_study_grp, analysis_research_expr) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
 
+# chiq.test
+research.test=chisq.test(dat.c$int_study_grp,dat.c$analysis_research_expr)
+tidy(research.test)
 
+# **************************************************************************** #
+# PREVIOUS STOOL COLLECTION                      
+# categories: 1, yes | 0, no
+# **************************************************************************** #
 
-
-# distribution of previous stool collection "int_guide_stoolcollect" 
-# 1, yes | 0, no
+# All
+#----
 dat.c %>% 
   select(int_guide_stoolcollect) %>% 
   group_by(int_guide_stoolcollect) %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
+# Group
+#---------
+dat.c %>% 
+  select(int_study_grp, int_guide_stoolcollect) %>% 
+  group_by(int_study_grp, int_guide_stoolcollect) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
 
+# chiq.test
+stool.test=chisq.test(dat.c$int_study_grp,dat.c$int_guide_stoolcollect)
+tidy(stool.test)
 
 
 names(dat.c)
