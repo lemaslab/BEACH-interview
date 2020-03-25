@@ -70,6 +70,7 @@ interview <- redcap_read(
 # check data pull
 str(interview)
 interview[1]
+unique(interview$record_id)
 
 # rename data
 dat=interview
@@ -88,33 +89,142 @@ complete=dat %>%
   pull(record_id)
 length(complete) # 40
 
-# limit data to include only interview participants (n=40)
-dat.c=dat %>%
-  filter(int_interview_complete==1)
+# **************************************************************************** #
+# RECODE DATA          
+# **************************************************************************** #
 
-# table 2. 
+# study_length_cats
+#------------------
+dat$study_length_cats[dat$int_guide_studylength<=6] <- "1"
+dat$study_length_cats[dat$int_guide_studylength>=7 & dat$int_guide_studylength<=12] <- "2"
+dat$study_length_cats[dat$int_guide_studylength>=13 & dat$int_guide_studylength<=24] <- "3"
+dat$study_length_cats[dat$int_guide_studylength>25] <- "4"
+
+# study visits
+#------------
+dat$study_visit_cats[dat$int_guide_transportation<=2] <- "1"
+dat$study_visit_cats[dat$int_guide_transportation>=3 & dat$int_guide_transportation<=4] <- "2"
+dat$study_visit_cats[dat$int_guide_transportation>5] <- "3"
+
+# study_visit_time
+#------------------
+dat$study_visit_time_cats[dat$int_guide_visitlength<=30] <- "1"
+dat$study_visit_time_cats[dat$int_guide_visitlength>=31 & dat$int_guide_visitlength<=60] <- "2"
+dat$study_visit_time_cats[dat$int_guide_visitlength>=61 & dat$int_guide_visitlength<=90] <- "3"
+dat$study_visit_time_cats[dat$int_guide_visitlength>91] <- "4"
+
+
+table(dat$study_visit_time_cats)
+
+
+
+# limit data to include only interview participants (n=40)
+# and variables for table 02
+dat.c=dat %>%
+  filter(int_interview_complete==1) %>%
+  select(record_id,redcap_repeat_instrument,redcap_repeat_instance,int_study_grp,
+         int_guide_studylength,study_length_cats,int_guide_transportation,study_visit_cats,
+         int_guide_visitlength,study_visit_time_cats)
+
+# check 
 names(dat.c)
 str(dat.c)
-# convert group variable to factor (1=pregnant, 2=breastfeeding)
-dat.c$int_study_grp=as.factor(dat.c$int_study_grp)
+
+# factors 
+dat.c$int_study_grp=as.factor(dat.c$int_study_grp)  # study group: 1=pregnant, 2=breastfeeding
+
+# **************************************************************************** #
+# STUDY LENGTH          
+# categories: 1, 0-6 months | 2, 7-12 months | 3, 13-24 months | 4, 24+ months
+# **************************************************************************** #
 
 # range of study length (months)
 range(dat.c$int_guide_studylength, na.rm=T)  #2 60
 round(mean(dat.c$int_guide_studylength, na.rm=T),1)  # 24.7
 round(sd(dat.c$int_guide_studylength, na.rm=T),1)  # 18.9
-hist(dat.c$int_guide_studylength, na.rm=T)
+# hist(dat.c$int_guide_studylength, na.rm=T)
+
+# ALL
+#----
+dat.c %>% 
+  select(study_length_cats) %>% 
+  group_by(study_length_cats) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
+
+# Group
+#---------
+dat.c %>% 
+  select(int_study_grp, study_length_cats) %>% 
+  group_by(int_study_grp, study_length_cats) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
+
+# chiq.test
+study.test=chisq.test(dat.c$int_study_grp,dat.c$study_length_cats)
+tidy(study.test)
+
+# ****************************************************************** #
+# VISIT NUMBER          
+# categories: 1, 1-2 visits | 2, 3-4 visits | 3, 4+ visits
+# ****************************************************************** #
 
 # range of visit number (count)
 range(dat.c$int_guide_transportation, na.rm=T)  #2 120
 round(mean(dat.c$int_guide_transportation, na.rm=T),1)  # 17.9
 round(sd(dat.c$int_guide_transportation, na.rm=T),1)  # 18.9
-hist(dat.c$int_guide_transportation, na.rm=T)
+# hist(dat.c$int_guide_transportation, na.rm=T)
 
-# range of study visit length (minutes)
+# ALL
+#----
+dat.c %>% 
+  select(study_visit_cats) %>% 
+  group_by(study_visit_cats) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
+
+# Group
+#---------
+dat.c %>% 
+  select(int_study_grp, study_visit_cats) %>% 
+  group_by(int_study_grp, study_visit_cats) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
+
+# chiq.test
+visit.test=chisq.test(dat.c$int_study_grp,dat.c$study_visit_cats)
+tidy(visit.test)
+
+# ****************************************************************** #
+# VISIT LENGTH (minutes)          
+# categories: 1, 0-30 min | 2, 31-60 min | 3, 61-90 min | 4, 90+ min
+# ****************************************************************** #
+
 range(dat.c$int_guide_visitlength, na.rm=T)  # 30 240
 round(mean(dat.c$int_guide_visitlength, na.rm=T),1)  # 81.2
 round(sd(dat.c$int_guide_visitlength, na.rm=T),1)  # 18.9
 hist(dat.c$int_guide_visitlength, na.rm=T)
+
+# ALL
+#----
+dat.c %>% 
+  select(study_visit_time_cats) %>% 
+  group_by(study_visit_time_cats) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
+
+# Group
+#---------
+dat.c %>% 
+  select(int_study_grp, study_visit_time_cats) %>% 
+  group_by(int_study_grp, study_visit_time_cats) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
+
+# chiq.test
+visit_time.test=chisq.test(dat.c$int_study_grp,dat.c$study_visit_time_cats)
+tidy(visit_time.test)
+
 
 # distribution of stuy visit time of day categories 
 # (1, morning | 2, lunchtime | 3, afternoon)
