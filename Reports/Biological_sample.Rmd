@@ -1,0 +1,157 @@
+---
+title: "particpant sample collection"
+author: "Luran Manfio"
+date: "12/6/2019"
+output:
+  html_document:
+    highlight: tango
+    theme: spacelab
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+---
+
+
+```{r, include=FALSE, warning=FALSE}
+
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(keyringr)
+library(redcapAPI)
+library(REDCapR)
+library(lubridate)
+library(formattable)
+
+# **************************************************************************** #
+# ***************  Pull data from redcap with api                                              
+# **************************************************************************** # 
+
+# Get Redcap API Token
+# # https://cran.r-project.org/web/packages/keyringr/vignettes/Avoiding_plain_text_passwords_in_R_with_keyringr.html
+credential_label <- "interview_api"
+credential_path <- paste(Sys.getenv("USERPROFILE"), '\\DPAPI\\passwords\\', Sys.info()["nodename"], '\\', credential_label, '.txt', sep="")
+uri <- "https://redcap.ctsi.ufl.edu/redcap/api/"
+beach_token<-decrypt_dpapi_pw(credential_path)
+print(beach_token)
+
+# Create connections
+rcon <- redcapConnection(url=uri, token=beach_token)
+
+
+# crc variables
+
+desired_fields <- c("record_id","int_phone_pass_fail","encounter_date_int","encounter_type_int",
+"beach_interview_study_encounters_complete",
+"learn_about_study_int","int_consent_complete",
+"analysis_mat_age_cats","analysis_bmi","mom3t_education_2",
+"analysis_mat_age","analysis_income","analysis_kids_previous","biosample_aliquot_type","biosample_collection_date","biosample_mom_baby")
+
+
+# events to retain
+
+events_to_retain  <- c("beach_interview_phone_screen","beach_interview_study_encounters","Biological_Specimen_Collection")
+
+# list of events
+
+# list records
+#exportRecords(rcon)  I don't know why having this in a report is an issue
+
+# export field names
+
+# consented records
+records.v1=c("BIS001A","BIS002A","BIS003A","BIS004A","BIS005A",
+                     "BIS006A","BIS007A","BIS008A","BIS009A","BIS010A",
+                     "BIS011A","BIS013A","BIS014A","BIS018A","BIS019A",
+                     "BIS022A","BIS023A","BIS024A","BIS025A","BIS026A",
+                     "BIS027A","BIS028A","BIS029A","BIS030A","BIS031A",
+                     "BIS032A","BIS033A","BIS034A",
+                     "PRG001","PRG002","PRG003","PRG004","PRG005",
+                     "PRG006","PRG007","PRG008","PRG009","PRG010",
+                     "PRG011","PRG012","PRG013","PRG014","PRG015",
+                     "PRG016","PRG017","PRG018","PRG020",
+                     "156","157","195","196","214","216","224","225","228",
+                     "230","234","235","238","239",
+                     "240","241","242","245","246","251","255","257","258",
+                     "259","260","261","262","265","266","267",
+                     "268","269","270","271","273","274","275","276","277",
+                     "278","280","281","282","283","286","289",
+                     "290","291","293","294","295","296","297","85","88","90")
+
+ds <- data.frame(records.v1)
+
+# pull data
+ds_some_rows_v1 <- redcap_read(
+  redcap_uri = uri, 
+  records= records.v1,
+  token      = beach_token, 
+  fields     = desired_fields
+  
+)$data
+```
+
+```{r echo=FALSE, warning=FALSE}
+# recode encounter type
+ds_some_rows_v1=ds_some_rows_v1 %>%
+  #use mutate(new column = recode(current column to be recoded, "variable in column"="new variable name"))
+    mutate(learn_about_study = recode(learn_about_study_int, "1"="Flyer","3"="Facebook","5"="Other"))%>%
+  replace_na(list( learn_about_study = "Didn't Respond"))%>%
+  mutate(education_level = recode(mom3t_education_2,"1"="8th grade or less","2"="some high school","3"="high school diploma/GED","4"="some college or community college","5"="Associates degree","6"="completed tech or vocational school","7"="college graduate","8"="some graduate or professional school","9"="Graduate or professional degree"))%>%
+  mutate(previous_kids = recode(analysis_kids_previous, "1"="yes","0"="no"))%>%
+  mutate(income = recode(analysis_income, "1"="$0-$15,000","2"="$15,001-$19,000","3"="$19,001-$37,000","4"="$37,001-$44,000","5"="$44,001-$52,000","6"="$52,001-$56,000","7"="$56,001-$67,000","8"="$67,001-$79,000","9"="$79,001 or more"))%>%
+  mutate(phone_pass_fail = recode(int_phone_pass_fail, "1"="pass","0"="fail"))%>%
+  mutate(consent_complete = recode(int_consent_complete, "1"="Consented","0"="not Consented","NA"="Did not respond"))
+
+```
+
+## Participants that provided samples
+```{r echo=FALSE, warning=FALSE}
+bio_Participants <- ds_some_rows_v1%>%
+  select(record_id,biosample_collection_date,biosample_mom_baby,biosample_aliquot_type,learn_about_study)%>%
+  filter(!is.na(biosample_collection_date))%>%
+  distinct(record_id)
+
+encounter_of_bioParticipant <- ds_some_rows_v1%>%
+  select(record_id,learn_about_study)%>%
+  inner_join(bio_Participants,encounter_of_bioParticipant, by="record_id")%>%
+  distinct(record_id, .keep_all = TRUE)%>%
+  group_by(learn_about_study)%>%
+  summarise(count=n())
+
+formattable(encounter_of_bioParticipant, align=c("l","r"))
+```
+
+
+# review samples collected between normal and overweight particiapnts
+```{r echo=FALSE, warning=FALSE}
+
+bio_Participants <- ds_some_rows_v1%>%
+  select(record_id,biosample_collection_date,biosample_mom_baby,biosample_aliquot_type,learn_about_study)%>%
+  filter(!is.na(biosample_collection_date))%>%
+  distinct(record_id)
+
+encounter_of_bioParticipant <- ds_some_rows_v1%>%
+  select(record_id,learn_about_study,analysis_bmi)%>%
+  filter(analysis_bmi<25)%>%
+  inner_join(bio_Participants,encounter_of_bioParticipant, by="record_id")%>%
+  distinct(record_id, .keep_all = TRUE)%>%
+  group_by(learn_about_study)%>%
+  summarise(count=n())
+
+formattable(encounter_of_bioParticipant, align=c("l","r"))
+
+encounter_of_bioParticipant <- ds_some_rows_v1%>%
+  select(record_id,learn_about_study,analysis_bmi)%>%
+  filter(analysis_bmi>=25)%>%
+  inner_join(bio_Participants,encounter_of_bioParticipant, by="record_id")%>%
+  distinct(record_id, .keep_all = TRUE)%>%
+  group_by(learn_about_study)%>%
+  summarise(count=n())
+
+formattable(encounter_of_bioParticipant, align=c("l","r"))
+
+```
+

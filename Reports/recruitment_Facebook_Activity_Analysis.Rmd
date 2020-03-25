@@ -141,14 +141,20 @@ my_complete <- full_join(my_data, Encounter_per_time, by = "encounter_date_int")
 
 Encounter_per_time <- my_complete%>%
   separate(encounter_date_int,c("y","m","d"))%>%
-  group_by(learn_about_study,m,y)%>%
+  mutate(Quarter = case_when(
+    m == "01" | m == "02" | m == "03" ~ "Q1",
+    m == "04" | m == "05" | m == "06" ~ "Q2",
+    m == "07" | m == "08" | m == "09" ~ "Q3",
+    m == "10" | m == "11" | m == "12" ~ "Q4",
+    TRUE~"Q5"))%>%
+  group_by(learn_about_study,y,Quarter)%>%
   summarize(count=n())%>%
-  unite("YM",c("y","m"),sep ="-")
+  unite("YQ",c("y",Quarter),sep ="-")
 
 
 theme_set(theme_classic())
 # distribution of visits each month(histogram)
-h <- ggplot(Encounter_per_time, aes(YM, count)) + scale_fill_brewer(palette = "Spectral")
+h <- ggplot(Encounter_per_time, aes(YQ, count)) + scale_fill_brewer(palette = "Spectral")
 h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
                    bins=24,
                    col="black", 
@@ -163,6 +169,11 @@ h + geom_histogram(aes(fill=factor(learn_about_study)), stat = "Identity",
   theme(axis.text.x = element_text(angle=70, vjust =.6))
 ```
 
+```{r echo=FALSE, warning=FALSE}
+
+#facebook rate over time 
+
+```
 
 
 ```{r echo=FALSE, warning=FALSE}

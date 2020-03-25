@@ -1,0 +1,327 @@
+---
+title: "recruitment stats test"
+author: "Luran Manfio"
+date: "1/2/2020"
+output: 
+  html_document:
+    highlight: tango
+    theme: spacelab
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+---
+
+```{r, include=FALSE, warning=FALSE}
+
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(keyringr)
+library(redcapAPI)
+library(REDCapR)
+library(lubridate)
+library(formattable)
+library(broom)
+
+# **************************************************************************** #
+# ***************  Pull data from redcap with api                                              
+# **************************************************************************** # 
+
+# Get Redcap API Token
+# # https://cran.r-project.org/web/packages/keyringr/vignettes/Avoiding_plain_text_passwords_in_R_with_keyringr.html
+credential_label <- "interview_api"
+credential_path <- paste(Sys.getenv("USERPROFILE"), '\\DPAPI\\passwords\\', Sys.info()["nodename"], '\\', credential_label, '.txt', sep="")
+uri <- "https://redcap.ctsi.ufl.edu/redcap/api/"
+beach_token<-decrypt_dpapi_pw(credential_path)
+print(beach_token)
+
+# Create connections
+rcon <- redcapConnection(url=uri, token=beach_token)
+
+
+# crc variables
+
+desired_fields <- c("record_id","int_phone_pass_fail","encounter_date_int","encounter_type_int",
+"beach_interview_study_encounters_complete",
+"learn_about_study_int","int_consent_complete",
+"analysis_mat_age_cats","analysis_bmi","mom3t_education_2",
+"analysis_mat_age","analysis_income","analysis_kids_previous")
+
+
+# events to retain
+
+events_to_retain  <- c("beach_interview_phone_screen","beach_interview_study_encounters")
+
+# list of events
+
+# list records
+#exportRecords(rcon)  I don't know why having this in a report is an issue
+
+# export field names
+
+# consented records
+records.v1=c("BIS001A","BIS002A","BIS003A","BIS004A","BIS005A",
+                     "BIS006A","BIS007A","BIS008A","BIS009A","BIS010A",
+                     "BIS011A","BIS013A","BIS014A","BIS018A","BIS019A",
+                     "BIS022A","BIS023A","BIS024A","BIS025A","BIS026A",
+                     "BIS027A","BIS028A","BIS029A","BIS030A","BIS031A",
+                     "BIS032A","BIS033A","BIS034A",
+                     "PRG001","PRG002","PRG003","PRG004","PRG005",
+                     "PRG006","PRG007","PRG008","PRG009","PRG010",
+                     "PRG011","PRG012","PRG013","PRG014","PRG015",
+                     "PRG016","PRG017","PRG018","PRG020",
+                     "156","157","195","196","214","216","224","225","228",
+                     "230","234","235","238","239",
+                     "240","241","242","245","246","251","255","257","258",
+                     "259","260","261","262","265","266","267",
+                     "268","269","270","271","273","274","275","276","277",
+                     "278","280","281","282","283","286","289",
+                     "290","291","293","294","295","296","297","85","88","90")
+
+ds <- data.frame(records.v1)
+
+# pull data
+ds_some_rows_v1 <- redcap_read(
+  redcap_uri = uri, 
+  records= records.v1,
+  token      = beach_token, 
+  fields     = desired_fields
+  
+)$data
+```
+
+```{r echo=FALSE, warning=FALSE}
+# recode encounter type
+ds_some_rows_v1=ds_some_rows_v1 %>%
+  #use mutate(new column = recode(current column to be recoded, "variable in column"="new variable name"))
+    mutate(learn_about_study = recode(learn_about_study_int, "1"="Flyer","3"="Facebook","5"="Other"))%>%
+  replace_na(list( learn_about_study = "Didn't Respond"))%>%
+  mutate(education_level = recode(mom3t_education_2,"1"="8th grade or less","2"="some high school","3"="high school diploma/GED","4"="some college or community college","5"="Associates degree","6"="completed tech or vocational school","7"="college graduate","8"="some graduate or professional school","9"="Graduate or professional degree"))%>%
+  mutate(previous_kids = recode(analysis_kids_previous, "1"="yes","0"="no"))%>%
+  mutate(income = recode(analysis_income, "1"="$0-$15,000","2"="$15,001-$19,000","3"="$19,001-$37,000","4"="$37,001-$44,000","5"="$44,001-$52,000","6"="$52,001-$56,000","7"="$56,001-$67,000","8"="$67,001-$79,000","9"="$79,001 or more"))%>%
+  mutate(phone_pass_fail = recode(int_phone_pass_fail, "1"="pass","0"="fail"))%>%
+  mutate(consent_complete = recode(int_consent_complete, "1"="Consented","0"="not Consented"))%>%
+  replace_na(list( consent_complete = "not Consented"))
+
+```
+
+```{r echo=FALSE, warning=FALSE}
+Totals <- ds_some_rows_v1%>%
+  select(learn_about_study)%>%
+  group_by(learn_about_study)%>%
+  summarize(count=n())%>%
+  rename("how did you hear about us?"=learn_about_study,"Total"=count)
+
+formattable(Totals, align =c("l","r"))
+```
+
+
+```{r echo=FALSE, warning=FALSE}
+
+normal <- ds_some_rows_v1%>%
+  select(learn_about_study,consent_complete,phone_pass_fail,analysis_bmi)%>%
+  filter(analysis_bmi<25,!is.na(phone_pass_fail))
+
+over <- ds_some_rows_v1%>%
+  select(learn_about_study,consent_complete,phone_pass_fail,analysis_bmi)%>%
+  filter(analysis_bmi>=25,!is.na(phone_pass_fail))
+
+formattable(normal, align =c("l","c","c","r"))
+formattable(over, align =c("l","c","c","r"))
+
+normal_sum <- normal%>%
+  group_by(learn_about_study)%>%
+  summarize(count=n())
+
+over_sum <- over%>%
+  group_by(learn_about_study)%>%
+  summarize(count=n())
+
+formattable(normal_sum, align =c("l","r"))
+formattable(over_sum, align =c("l","r"))
+```
+
+
+# t-test for Facebook vs. Flyers Encounters
+## Not working yet
+```{r echo=FALSE, warning=FALSE}
+facebook <- ds_some_rows_v1%>%
+  select(learn_about_study)%>%
+  group_by(learn_about_study)%>%
+  filter(learn_about_study=="Facebook")%>%
+  rename("how did you hear about us?"=learn_about_study)
+
+flyer <- ds_some_rows_v1%>%
+  select(learn_about_study)%>%
+  group_by(learn_about_study)%>%
+  filter(learn_about_study=="Flyer")%>%
+  rename("how did you hear about us?"=learn_about_study)
+
+test <- ds_some_rows_v1%>%
+  select(learn_about_study)%>%
+  filter(learn_about_study=="Facebook" | learn_about_study=="Flyer")
+#t.test is not working due to not having enough varables in facebook
+#t.test(test,mu = 0)
+
+```
+
+
+# BMI mean meadian and variance
+```{r echo=FALSE, warning=FALSE}
+BMI <- ds_some_rows_v1%>%
+  select(analysis_bmi)%>%
+  filter(!is.na(analysis_bmi))
+mean_bmi <- BMI[[1]]
+mean(mean_bmi)
+median(mean_bmi)
+BMI_face <- ds_some_rows_v1%>%
+  select(analysis_bmi,learn_about_study)%>%
+  filter(!is.na(analysis_bmi),learn_about_study=="Facebook")%>%
+  select(analysis_bmi)
+BMI_flyer <- ds_some_rows_v1%>%
+  select(analysis_bmi,learn_about_study)%>%
+  filter(!is.na(analysis_bmi),learn_about_study=="Flyer")%>%
+  select(analysis_bmi)
+face_bmi <- BMI_face[[1]]
+flyer_bmi <- BMI_flyer[[1]]
+
+var_T <- var.test(face_bmi,flyer_bmi)
+glance(var_T)
+```
+
+# BIS BMI mean meadian and variance
+```{r echo=FALSE, warning=FALSE}
+BMI <- ds_some_rows_v1%>%
+  select(analysis_bmi,record_id)%>%
+  filter(!is.na(analysis_bmi))%>%
+  slice(1:25)
+
+mean_bmi <- BMI[[1]]
+mean(mean_bmi)
+median(mean_bmi)
+BMI_face <- ds_some_rows_v1%>%
+  select(analysis_bmi,learn_about_study)%>%
+  filter(!is.na(analysis_bmi))%>%
+  slice(1:25)%>%
+  filter(learn_about_study=="Facebook")%>%
+  select(analysis_bmi)
+BMI_flyer <- ds_some_rows_v1%>%
+  select(analysis_bmi,learn_about_study)%>%
+  filter(!is.na(analysis_bmi))%>%
+  slice(1:25)%>%
+  filter(learn_about_study=="Flyer")%>%
+  select(analysis_bmi)
+face_bmi <- BMI_face[[1]]
+flyer_bmi <- BMI_flyer[[1]]
+
+var.test(face_bmi,flyer_bmi)
+```
+
+# PRG BMI mean meadian and variance
+```{r echo=FALSE, warning=FALSE}
+BMI <- ds_some_rows_v1%>%
+  select(analysis_bmi,record_id)%>%
+  filter(!is.na(analysis_bmi))%>%
+  slice(26:44)
+
+mean_bmi <- BMI[[1]]
+mean(mean_bmi)
+median(mean_bmi)
+BMI_face <- ds_some_rows_v1%>%
+  select(analysis_bmi,learn_about_study)%>%
+  filter(!is.na(analysis_bmi))%>%
+  slice(26:44)%>%
+  filter(learn_about_study=="Facebook")%>%
+  select(analysis_bmi)
+BMI_flyer <- ds_some_rows_v1%>%
+  select(analysis_bmi,learn_about_study)%>%
+  filter(!is.na(analysis_bmi))%>%
+  slice(26:44)%>%
+  filter(learn_about_study=="Flyer")%>%
+  select(analysis_bmi)
+face_bmi <- BMI_face[[1]]
+flyer_bmi <- BMI_flyer[[1]]
+
+var.test(face_bmi,flyer_bmi)
+```
+
+# Age mean meadian and variance
+```{r echo=FALSE, warning=FALSE}
+BMI <- ds_some_rows_v1%>%
+  select(analysis_mat_age)%>%
+  filter(!is.na(analysis_mat_age))
+mean_bmi <- BMI[[1]]
+mean(mean_bmi)
+median(mean_bmi)
+BMI_face <- ds_some_rows_v1%>%
+  select(analysis_mat_age,learn_about_study)%>%
+  filter(!is.na(analysis_mat_age),learn_about_study=="Facebook")%>%
+  select(analysis_mat_age)
+BMI_flyer <- ds_some_rows_v1%>%
+  select(analysis_mat_age,learn_about_study)%>%
+  filter(!is.na(analysis_mat_age),learn_about_study=="Flyer")%>%
+  select(analysis_mat_age)
+face_bmi <- BMI_face[[1]]
+flyer_bmi <- BMI_flyer[[1]]
+
+var.test(face_bmi,flyer_bmi)
+```
+
+# BIS age mean meadian and variance
+```{r echo=FALSE, warning=FALSE}
+BMI <- ds_some_rows_v1%>%
+  select(analysis_mat_age,record_id)%>%
+  filter(!is.na(analysis_mat_age))%>%
+  slice(1:25)
+
+mean_bmi <- BMI[[1]]
+mean(mean_bmi)
+median(mean_bmi)
+BMI_face <- ds_some_rows_v1%>%
+  select(analysis_mat_age,learn_about_study)%>%
+  filter(!is.na(analysis_mat_age))%>%
+  slice(1:25)%>%
+  filter(learn_about_study=="Facebook")%>%
+  select(analysis_mat_age)
+BMI_flyer <- ds_some_rows_v1%>%
+  select(analysis_mat_age,learn_about_study)%>%
+  filter(!is.na(analysis_mat_age))%>%
+  slice(1:25)%>%
+  filter(learn_about_study=="Flyer")%>%
+  select(analysis_mat_age)
+face_bmi <- BMI_face[[1]]
+flyer_bmi <- BMI_flyer[[1]]
+
+var.test(face_bmi,flyer_bmi)
+```
+
+# PRG age mean meadian and variance
+```{r echo=FALSE, warning=FALSE}
+BMI <- ds_some_rows_v1%>%
+  select(analysis_mat_age,record_id)%>%
+  filter(!is.na(analysis_mat_age))%>%
+  slice(26:44)
+
+mean_bmi <- BMI[[1]]
+mean(mean_bmi)
+median(mean_bmi)
+BMI_face <- ds_some_rows_v1%>%
+  select(analysis_mat_age,learn_about_study)%>%
+  filter(!is.na(analysis_mat_age))%>%
+  slice(26:44)%>%
+  filter(learn_about_study=="Facebook")%>%
+  select(analysis_mat_age)
+BMI_flyer <- ds_some_rows_v1%>%
+  select(analysis_mat_age,learn_about_study)%>%
+  filter(!is.na(analysis_mat_age))%>%
+  slice(26:44)%>%
+  filter(learn_about_study=="Flyer")%>%
+  select(analysis_mat_age)
+face_bmi <- BMI_face[[1]]
+flyer_bmi <- BMI_flyer[[1]]
+
+var.test(face_bmi,flyer_bmi)
+```
