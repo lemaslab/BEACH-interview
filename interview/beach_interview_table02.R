@@ -58,8 +58,7 @@ desired_fields_v1 <- c("record_id","int_study_grp","interphone_date","int_consen
                        "analysis_bmi_cats", "analysis_bmi_source", "mom3t_education_2", "analysis_research_expr",
                        "analysis_kids_previous", "analysis_time_of_day","int_guide_transportation",
                        "int_guide_stoolcollect", "int_guide_studylength", "int_guide_visitlength", "int_guide_visitlength",
-                       "int_guide_reminders","int_guide_contactby","int_guide_advanceremind","int_guide_timeofday",
-                       "int_guide_contactby")
+                       "int_guide_reminders","int_guide_contactby","int_guide_advanceremind","int_guide_timeofday")
 
 # pull data
 interview <- redcap_read(
@@ -74,25 +73,31 @@ str(interview)
 interview[1]
 unique(interview$record_id)
 
-# rename data
-dat=interview
-names(dat)
-str(dat)
+# **************************************************************************** #
+# SUBSET DATA: consented participants (n=40) & table 02 variables          
+# **************************************************************************** #
+
+dat=interview %>%
+  filter(int_interview_complete==1) %>%
+  select(record_id,int_study_grp,
+         int_guide_studylength,int_guide_transportation,
+         int_guide_visitlength, int_guide_timeofday,int_guide_reminders,
+         int_guide_timeofday,int_guide_advanceremind,
+         int_guide_contactby___1,int_guide_contactby___2,int_guide_contactby___3,
+         int_guide_contactby___4) %>%
+  as_tibble()
+
+# study_length_cats, study_visit_cats,study_visit_time_cats,advanceremind_cats  (computed down below)
 
 # format dates
-dat$int_consent_date=as.Date(dat$int_consent_date, "%Y-%m-%d")
-dat$interphone_date=as.Date(dat$interphone_date, "%Y-%m-%d")
-dat$encounter_date_int=as.Date(dat$encounter_date_int, "%Y-%m-%d")
-dat$biosample_collection_date=as.Date(dat$biosample_collection_date, "%Y-%m-%d")
+# dat$int_consent_date=as.Date(dat$int_consent_date, "%Y-%m-%d")
+# dat$interphone_date=as.Date(dat$interphone_date, "%Y-%m-%d")
+# dat$encounter_date_int=as.Date(dat$encounter_date_int, "%Y-%m-%d")
+# dat$biosample_collection_date=as.Date(dat$biosample_collection_date, "%Y-%m-%d")
 
-# how many have completed the interview
-complete=dat %>%
-  filter(int_interview_complete==1)%>%
-  pull(record_id)
-length(complete) # 40
 
 # **************************************************************************** #
-# RECODE DATA: Continuous to categorical          
+# RECODE DATA: continuous to categorical          
 # **************************************************************************** #
 
 # study_length_cats
@@ -115,49 +120,44 @@ dat$study_visit_time_cats[dat$int_guide_visitlength>=31 & dat$int_guide_visitlen
 dat$study_visit_time_cats[dat$int_guide_visitlength>=61 & dat$int_guide_visitlength<=90] <- "3"
 dat$study_visit_time_cats[dat$int_guide_visitlength>91] <- "4"
 
-# prefered contact method
-# categories: 1, text message | 2, phone call | 3, email | 4, by mail
-#---------------
-dat1=dat %>%
-  gather(key = "contact", value = "value", na.rm = TRUE,
-         int_guide_contactby___1, int_guide_contactby___2, int_guide_contactby___3, int_guide_contactby___4) %>%
-  mutate(contact_pref=recode(contact, int_guide_contactby___1="text",
-                  int_guide_contactby___2="phone",
-                  int_guide_contactby___3="email",
-                  int_guide_contactby___4="mail")) 
-
 # advance reminder
 # categories: categories: 1, 1-2 days | 2, 3-5 days | 3, 6-10 days | 4, 10+ days
 #----------------
-dat1$advanceremind_cats[dat1$int_guide_advanceremind<=2] <- "1"
-dat1$advanceremind_cats[dat1$int_guide_advanceremind>=3 & dat1$int_guide_advanceremind<=5] <- "2"
-dat1$advanceremind_cats[dat1$int_guide_advanceremind>=6 & dat1$int_guide_advanceremind<=10] <- "3"
-dat1$advanceremind_cats[dat1$int_guide_advanceremind>11] <- "4"
-
-# **************************************************************************** #
-# SUBSET DATA: consented participants (n=40) & table 02 variables          
-# **************************************************************************** #
-
-dat.c=dat1 %>%
-  filter(int_interview_complete==1) %>%
-  select(record_id,redcap_repeat_instrument,redcap_repeat_instance,int_study_grp,
-         int_guide_studylength,study_length_cats,int_guide_transportation,study_visit_cats,
-         int_guide_visitlength,study_visit_time_cats, int_guide_timeofday,int_guide_reminders,
-         int_guide_timeofday,int_guide_advanceremind)
+dat$advanceremind_cats[dat$int_guide_advanceremind<=2] <- "1"
+dat$advanceremind_cats[dat$int_guide_advanceremind>=3 & dat$int_guide_advanceremind<=5] <- "2"
+dat$advanceremind_cats[dat$int_guide_advanceremind>=6 & dat$int_guide_advanceremind<=10] <- "3"
+dat$advanceremind_cats[dat$int_guide_advanceremind>11] <- "4"
 
 # check 
-names(dat.c)
-str(dat.c)
-
-# factors 
-dat.c$int_study_grp=as.factor(dat.c$int_study_grp)  # study group: 1=pregnant, 2=breastfeeding
+#-------
+names(dat)
+str(dat)
 
 # **************************************************************************** #
-# STUDY LENGTH          
+# RECODE DATA: character to categorical          
+# **************************************************************************** #
+
+# study group
+# catagories: 1=pregnant, 2=breastfeeding
+#----------------------------------------
+dat$int_study_grp=as.factor(dat$int_study_grp)  
+
+
+# **************************************************************************** #
+#                              COMPUTE TABLE STATS          
+# **************************************************************************** #
+
+# rename data
+dat.c=dat
+
+
+# **************************************************************************** #
+# STUDY LENGTH (months)          
 # categories: 1, 0-6 months | 2, 7-12 months | 3, 13-24 months | 4, 24+ months
 # **************************************************************************** #
 
-# range of study length (months)
+# descriptives
+#-------------
 range(dat.c$int_guide_studylength, na.rm=T)  #2 60
 round(mean(dat.c$int_guide_studylength, na.rm=T),1)  # 24.7
 round(sd(dat.c$int_guide_studylength, na.rm=T),1)  # 18.9
@@ -184,14 +184,15 @@ study.test=chisq.test(dat.c$int_study_grp,dat.c$study_length_cats)
 tidy(study.test)
 
 # ****************************************************************** #
-# VISIT NUMBER          
+# VISIT NUMBER (count)         
 # categories: 1, 1-2 visits | 2, 3-4 visits | 3, 4+ visits
 # ****************************************************************** #
 
-# range of visit number (count)
+# descriptives
+#-------------
 range(dat.c$int_guide_transportation, na.rm=T)  #2 120
 round(mean(dat.c$int_guide_transportation, na.rm=T),1)  # 17.9
-round(sd(dat.c$int_guide_transportation, na.rm=T),1)  # 18.9
+round(sd(dat.c$int_guide_transportation, na.rm=T),1)  # 32
 # hist(dat.c$int_guide_transportation, na.rm=T)
 
 # ALL
@@ -219,10 +220,12 @@ tidy(visit.test)
 # categories: 1, 0-30 min | 2, 31-60 min | 3, 61-90 min | 4, 90+ min
 # ****************************************************************** #
 
+# descriptives
+#-------------
 range(dat.c$int_guide_visitlength, na.rm=T)  # 30 240
 round(mean(dat.c$int_guide_visitlength, na.rm=T),1)  # 81.2
-round(sd(dat.c$int_guide_visitlength, na.rm=T),1)  # 18.9
-hist(dat.c$int_guide_visitlength, na.rm=T)
+round(sd(dat.c$int_guide_visitlength, na.rm=T),1)  # 44.2
+# hist(dat.c$int_guide_visitlength, na.rm=T)
 
 # ALL
 #----
@@ -270,7 +273,7 @@ visit_time_day.test=chisq.test(dat.c$int_study_grp,dat.c$int_guide_timeofday)
 tidy(visit_time_day.test)
 
 # ****************************************************************** #
-# STUDY REMINDERS          
+# STUDY REMINDERS                * t-test() may not be appropriate?
 # categories: 1, yes | 0, no
 # ****************************************************************** #
 
@@ -291,45 +294,76 @@ dat.c %>%
   mutate(freq = n / sum(n))
 
 # chiq.test
-visit_reminder.test=chisq.test(dat.c$int_study_grp,dat.c$int_guide_reminders)
+visit_reminder.test=t.test(dat.c$int_study_grp,dat.c$int_guide_reminders)
 tidy(visit_reminder.test)
 
 # ****************************************************************** #
 # PREFERED CONTACT         
 # categories: 1, text message | 2, phone call | 3, email | 4, by mail
 # ****************************************************************** #
+
+# data wrangle
+#---------------
+dat1=dat.c %>%
+  select(record_id,int_study_grp,int_guide_contactby___1,int_guide_contactby___2,int_guide_contactby___3,int_guide_contactby___4) %>%
+  na_if(0) %>% 
+  gather(key = "contact", value = "value", na.rm = TRUE,
+         int_guide_contactby___1, int_guide_contactby___2, int_guide_contactby___3, int_guide_contactby___4) %>%
+  mutate(contact_pref=recode(contact, int_guide_contactby___1="text",
+                             int_guide_contactby___2="phone",
+                             int_guide_contactby___3="email",
+                             int_guide_contactby___4="mail")) %>%
+  select(record_id, int_study_grp, contact_pref, everything()) %>%
+  select(-contact)
+
 # ALL
 #----
-dat.c %>% 
-  select(int_guide_contactby) %>% 
-  group_by(int_guide_contactby) %>%
+dat1 %>% 
+  select(contact_pref) %>% 
+  group_by(contact_pref) %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
 # Group
 #---------
-dat.c %>% 
-  select(int_study_grp, int_guide_reminders) %>% 
-  group_by(int_study_grp, int_guide_reminders) %>%
+dat1 %>% 
+  select(int_study_grp, contact_pref) %>% 
+  group_by(int_study_grp, contact_pref) %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
 # chiq.test
-visit_reminder.test=chisq.test(dat.c$int_study_grp,dat.c$int_guide_reminders)
-tidy(visit_reminder.test)
-
+pref_contact.test=chisq.test(dat1$int_study_grp,dat1$contact_pref)
+tidy(pref_contact.test)
 
 # ****************************************************************** #
 # ADVANCE REMINDERS (days)         
 # categories: categories: 1, 1-2 days | 2, 3-5 days | 3, 6-10 days | 4, 10+ days
 # ****************************************************************** #
 
-
-# range of advanced reminders (days)
+# descriptives
+# ------------
 range(dat.c$int_guide_advanceremind, na.rm=T)  # 1 30
 round(mean(dat.c$int_guide_advanceremind, na.rm=T),1)  # 7
 round(sd(dat.c$int_guide_advanceremind, na.rm=T),1)  # 6.8
-hist(dat.c$int_guide_advanceremind, na.rm=T)
+# hist(dat.c$int_guide_advanceremind, na.rm=T)
 
+# ALL
+#----
+dat.c %>% 
+  select(advanceremind_cats) %>% 
+  group_by(advanceremind_cats) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
 
-names(dat.c)
+# Group
+#---------
+dat.c %>% 
+  select(int_study_grp, advanceremind_cats) %>% 
+  group_by(int_study_grp, advanceremind_cats) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
+
+# chiq.test
+adv_reminder.test=chisq.test(dat.c$int_study_grp,dat.c$advanceremind_cats)
+tidy(adv_reminder.test)
