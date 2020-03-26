@@ -21,6 +21,7 @@ library(redcapAPI)
 library(REDCapR)
 library(broom)
 library(dplyr)
+library(tidyr)
 
 # Login to Gatorlink VPN
 
@@ -91,7 +92,7 @@ complete=dat %>%
 length(complete) # 40
 
 # **************************************************************************** #
-# RECODE DATA          
+# RECODE DATA: Continuous to categorical          
 # **************************************************************************** #
 
 # study_length_cats
@@ -101,37 +102,43 @@ dat$study_length_cats[dat$int_guide_studylength>=7 & dat$int_guide_studylength<=
 dat$study_length_cats[dat$int_guide_studylength>=13 & dat$int_guide_studylength<=24] <- "3"
 dat$study_length_cats[dat$int_guide_studylength>25] <- "4"
 
-# study visits
+# study_visit_cats
 #------------
 dat$study_visit_cats[dat$int_guide_transportation<=2] <- "1"
 dat$study_visit_cats[dat$int_guide_transportation>=3 & dat$int_guide_transportation<=4] <- "2"
 dat$study_visit_cats[dat$int_guide_transportation>5] <- "3"
 
-# study_visit_time
+# study_visit_time_cats
 #------------------
 dat$study_visit_time_cats[dat$int_guide_visitlength<=30] <- "1"
 dat$study_visit_time_cats[dat$int_guide_visitlength>=31 & dat$int_guide_visitlength<=60] <- "2"
 dat$study_visit_time_cats[dat$int_guide_visitlength>=61 & dat$int_guide_visitlength<=90] <- "3"
 dat$study_visit_time_cats[dat$int_guide_visitlength>91] <- "4"
 
-# contact method
+# prefered contact method
+# categories: 1, text message | 2, phone call | 3, email | 4, by mail
 #---------------
-dat$int_guide_contactby
-
-int_guide_contactby___1                   
-int_guide_contactby___2                  
-int_guide_contactby___3                   
-int_guide_contactby___4 
+dat1=dat %>%
+  gather(key = "contact", value = "value", na.rm = TRUE,
+         int_guide_contactby___1, int_guide_contactby___2, int_guide_contactby___3, int_guide_contactby___4) %>%
+  mutate(contact_pref=recode(contact, int_guide_contactby___1="text",
+                  int_guide_contactby___2="phone",
+                  int_guide_contactby___3="email",
+                  int_guide_contactby___4="mail")) 
 
 # advance reminder
+# categories: categories: 1, 1-2 days | 2, 3-5 days | 3, 6-10 days | 4, 10+ days
 #----------------
-int_guide_advanceremind
+dat1$advanceremind_cats[dat1$int_guide_advanceremind<=2] <- "1"
+dat1$advanceremind_cats[dat1$int_guide_advanceremind>=3 & dat1$int_guide_advanceremind<=5] <- "2"
+dat1$advanceremind_cats[dat1$int_guide_advanceremind>=6 & dat1$int_guide_advanceremind<=10] <- "3"
+dat1$advanceremind_cats[dat1$int_guide_advanceremind>11] <- "4"
 
+# **************************************************************************** #
+# SUBSET DATA: consented participants (n=40) & table 02 variables          
+# **************************************************************************** #
 
-
-# limit data to include only interview participants (n=40)
-# and variables for table 02
-dat.c=dat %>%
+dat.c=dat1 %>%
   filter(int_interview_complete==1) %>%
   select(record_id,redcap_repeat_instrument,redcap_repeat_instance,int_study_grp,
          int_guide_studylength,study_length_cats,int_guide_transportation,study_visit_cats,
@@ -313,8 +320,8 @@ tidy(visit_reminder.test)
 
 
 # ****************************************************************** #
-# advanced reminders (days)         
-
+# ADVANCE REMINDERS (days)         
+# categories: categories: 1, 1-2 days | 2, 3-5 days | 3, 6-10 days | 4, 10+ days
 # ****************************************************************** #
 
 
