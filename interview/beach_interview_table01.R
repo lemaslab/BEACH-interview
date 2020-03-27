@@ -42,22 +42,18 @@ exportInstruments(rcon)
 exportFieldNames(rcon)
 
 # Variables for table 01 
-desired_fields_v1 <- c("record_id","int_study_grp","interphone_date","int_consent_date","int_consent_complete",
-                       "beach_interview_phone_screen_complete","int_phone_pass_fail",
-                       "int_interview_date","int_interview_complete","int_audio_length_min", # study 
+desired_fields_v1 <- c("record_id","int_study_grp","int_consent_complete",
+                       "int_interview_complete","int_audio_length_min", # study 
                        "interphone_prepreg_bmi","interphone_age","mom3t_prepreg_bmi",
-                       "mompa_walk_slow","mompa_walk_quick", "mompa_walk_hills", "mompa_jog", "mompa_prenatal_exer", "mompa_swim","mompa_dance", # physical activity
                        "int_guide_education","int_guide_employmnt","int_guide_occupation",
                        "biosample_collection_date", "biosample_mom_baby", "biosample_aliquot_type",
                        "crc_specimen_barcode","biosample_tube_type","biosample_aliquot_numb",
-                       "biological_specimen_collection_complete","no_wkly_encounter_int", "encounter_date_int",
-                       "encounter_type_int","encounter_other_int","learn_about_study_int", "study_other_int",
-                       "see_flyer_int", "flyer_other_int", "ufhealth_clinic_int","beach_interview_study_encounters_complete",
+                       "biological_specimen_collection_complete",
                        "analysis_mat_age", "analysis_mat_age_cats", "analysis_mat_age_source", "analysis_bmi",
                        "analysis_bmi_cats", "analysis_bmi_source", "mom3t_education_2", "analysis_research_expr",
                        "analysis_kids_previous", "analysis_time_of_day","int_guide_stoolcollect","analysis_income")
 
-# pull data
+# pull data-V1
 interview <- redcap_read(
   batch_size=150L,
   redcap_uri = uri, 
@@ -103,7 +99,10 @@ dat.c=dat.1 %>%
   filter(int_interview_complete==1)%>%
   select(record_id,redcap_repeat_instrument,redcap_repeat_instance,int_study_grp,
          int_audio_length_min,analysis_mat_age_cats,analysis_bmi_cats,mom3t_education_2,
-         analysis_research_expr,analysis_kids_previous,int_guide_stoolcollect,analysis_income,analysis_income_cats)
+         analysis_research_expr,analysis_kids_previous,int_guide_stoolcollect,analysis_income,analysis_income_cats,
+         biosample_collection_date,biosample_mom_baby,biosample_aliquot_type,
+         crc_specimen_barcode,biosample_tube_type,biosample_aliquot_numb, biological_specimen_collection_complete) %>%
+  as_tibble()
 
 # check 
 names(dat.c)
@@ -296,5 +295,19 @@ dat.c %>%
 stool.test=chisq.test(dat.c$int_study_grp,dat.c$int_guide_stoolcollect)
 tidy(stool.test)
 
+# **************************************************************************** #
+# BIOLOGICAL SAMPLE COLLECTION                      
+# categories: 1, yes | 0, no
+# **************************************************************************** #
+
+test=dat.1 %>%
+  select(record_id,int_study_grp,biosample_collection_date,biosample_mom_baby,biosample_aliquot_type,
+         crc_specimen_barcode,biosample_tube_type,biosample_aliquot_numb, biological_specimen_collection_complete) 
+
+
+complete=dat.1 %>%
+  filter(int_interview_complete==1)%>%
+  pull(record_id)
+length(complete) # 40
 
 names(dat.c)

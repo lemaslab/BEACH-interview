@@ -43,11 +43,9 @@ exportInstruments(rcon)
 exportFieldNames(rcon)
 
 # Variables for table 01 
-desired_fields_v1 <- c("record_id","int_study_grp","interphone_date","int_consent_date","int_consent_complete",
-                       "beach_interview_phone_screen_complete","int_phone_pass_fail",
-                       "int_interview_date","int_interview_complete","int_audio_length_min", # study 
+desired_fields_v1 <- c("record_id","int_study_grp","int_consent_complete",
+                       "int_interview_complete","int_audio_length_min", # study 
                        "interphone_prepreg_bmi","interphone_age","mom3t_prepreg_bmi",
-                       "mompa_walk_slow","mompa_walk_quick", "mompa_walk_hills", "mompa_jog", "mompa_prenatal_exer", "mompa_swim","mompa_dance", # physical activity
                        "int_guide_education","int_guide_employmnt","int_guide_occupation",
                        "biosample_collection_date", "biosample_mom_baby", "biosample_aliquot_type",
                        "crc_specimen_barcode","biosample_tube_type","biosample_aliquot_numb",
