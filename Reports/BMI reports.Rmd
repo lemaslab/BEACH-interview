@@ -1,0 +1,372 @@
+---
+title: "Participant BMI Report"
+author: "Luran Manfio"
+date: "11/14/2019"
+output:
+  html_document:
+    highlight: tango
+    theme: spacelab
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+---
+
+```{r setup, echo=FALSE,include=FALSE, message=FALSE}
+
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(keyringr)
+library(redcapAPI)
+library(REDCapR)
+library(lubridate)
+library(formattable)
+
+# **************************************************************************** #
+# ***************  Pull data from redcap with api                                              
+# **************************************************************************** # 
+
+# Get Redcap API Token
+# # https://cran.r-project.org/web/packages/keyringr/vignettes/Avoiding_plain_text_passwords_in_R_with_keyringr.html
+credential_label <- "interview_api"
+credential_path <- paste(Sys.getenv("USERPROFILE"), '\\DPAPI\\passwords\\', Sys.info()["nodename"], '\\', credential_label, '.txt', sep="")
+uri <- "https://redcap.ctsi.ufl.edu/redcap/api/"
+beach_token<-decrypt_dpapi_pw(credential_path)
+print(beach_token)
+
+# Create connections
+rcon <- redcapConnection(url=uri, token=beach_token)
+
+```
+
+```{r echo=FALSE,warning=FALSE, message=FALSE}
+desired_fields <- c("record_id","int_phone_pass_fail","encounter_date_int","encounter_type_int",
+"beach_interview_study_encounters_complete",
+"learn_about_study_int","int_consent_complete",
+"analysis_mat_age_cats","analysis_bmi","mom3t_education_2",
+"analysis_mat_age","analysis_income","analysis_kids_previous")
+
+
+# events to retain
+
+events_to_retain  <- c("beach_interview_phone_screen","beach_interview_study_encounters")
+
+# list of events
+
+# list records
+#exportRecords(rcon)  I don't know why having this in a report is an issue
+
+# export field names
+
+# consented records
+consent.records.v1=c("BIS001A","BIS002A","BIS003A","BIS004A","BIS005A",
+                     "BIS006A","BIS007A","BIS008A","BIS009A","BIS010A",
+                     "BIS011A","BIS013A","BIS014A","BIS018A","BIS019A",
+                     "BIS022A","BIS023A","BIS024A","BIS025A","BIS026A",
+                     "BIS027A","BIS028A","BIS029A","BIS030A","BIS031A",
+                     "BIS032A","BIS033A","BIS034A",
+                     "PRG001","PRG002","PRG003","PRG004","PRG005",
+                     "PRG006","PRG007","PRG008","PRG009","PRG010",
+                     "PRG011","PRG012","PRG013","PRG014","PRG015",
+                     "PRG016","PRG017","PRG018","PRG020",
+                     "156","157","195","196","214","216","224","225","228",
+                     "230","234","235","238","239",
+                     "240","241","242","245","246","251","255","257","258",
+                     "259","260","261","262","265","266","267",
+                     "268","269","270","271","273","274","275","276","277",
+                     "278","280","281","282","283","286","289",
+                     "290","291","293","294","295","296","297","85","88","90")
+
+# pull data
+ds <- data.frame(consent.records.v1)
+ds_some_rows_v1 <- redcap_read(
+  redcap_uri = uri, 
+  records= consent.records.v1,
+  token      = beach_token, 
+  fields     = desired_fields
+  
+)$data
+
+```
+
+```{r echo=FALSE,warning=FALSE, message=FALSE}
+# recode encounter type
+ds_some_rows_v1=ds_some_rows_v1 %>%
+  #use mutate(new column = recode(current column to be recoded, "variable in column"="new variable name"))
+    mutate(learn_about_study = recode(learn_about_study_int, "1"="Flyer","3"="Facebook","5"="Other"))%>%
+  mutate(education_level = recode(mom3t_education_2,"1"="8th grade or less","2"="some high school","3"="high school diploma/GED","4"="some college or community college","5"="Associates degree","6"="completed tech or vocational school","7"="college graduate","8"="some graduate or professional school","9"="Graduate or professional degree"))%>%
+  mutate(previous_kids = recode(analysis_kids_previous, "1"="yes","0"="no"))%>%
+  mutate(income = recode(analysis_income, "1"="$0-$15,000","2"="$15,001-$19,000","3"="$19,001-$37,000","4"="$37,001-$44,000","5"="$44,001-$52,000","6"="$52,001-$56,000","7"="$56,001-$67,000","8"="$67,001-$79,000","9"="$79,001 or more"))%>%
+  mutate(phone_pass_fail = recode(int_phone_pass_fail, "1"="pass","0"="fail"))%>%
+  mutate(consent_complete = recode(int_consent_complete, "1"="Consented","0"="not Consented"))
+```
+
+## How preganaunt and Breastfereding participants heard of our study
+```{r echo=FALSE,warning=FALSE}
+A_Preg <- ds_some_rows_v1%>%
+  select(record_id,learn_about_study)%>%
+  slice(57:84)%>%
+  group_by(learn_about_study)%>%
+  summarise(count=n())
+
+
+g <- ggplot(A_Preg, aes(learn_about_study, count))
+g + geom_bar(stat="identity", width = 0.5, fill="tomato2") + 
+      labs(title="How Participant After Birth heard of our study", 
+           subtitle="only consented participnats", 
+           caption="Source: BEACH Interview study") +
+  geom_text(aes(label=count),vjust=-0.2) +
+      theme(axis.text.x = element_text(angle=65, vjust=0.6)) 
+
+formattable(A_Preg, asign=c("l","l"))
+
+C_Preg <- ds_some_rows_v1%>%
+  select(record_id,learn_about_study)%>%
+  slice(85:103)%>%
+  group_by(learn_about_study)%>%
+  summarise(count=n())
+
+g <- ggplot(C_Preg, aes(learn_about_study, count))
+g + geom_bar(stat="identity", width = 0.5, fill="tomato2") + 
+      labs(title="how pregnant participants heard of our study", 
+           subtitle="only consented participants", 
+           caption="Source: BEACH Interview study") +
+  geom_text(aes(label=count),vjust=-0.2) +
+      theme(axis.text.x = element_text(angle=65, vjust=0.6)) 
+
+formattable(C_Preg,asign=c("l","r"))
+```
+
+## Overall BMI of Particiapnts per group
+```{r echo=FALSE,warning=FALSE}
+  #Determining the average BMI per enocunter type.
+Pre_BMI <- ds_some_rows_v1%>%
+  select(record_id,analysis_bmi,learn_about_study)%>%
+  filter(!is.na(analysis_bmi))%>%
+  filter(!is.na(learn_about_study))
+  
+
+
+#create a marginal Histogram / Boxplot for maternal ages by encounter type:
+Pre_BMI$learn_about_study <- as.factor(Pre_BMI$learn_about_study)
+
+    library(ggplot2)
+  theme_set(theme_classic())
+  
+  # Plot
+means <- aggregate(analysis_bmi ~  learn_about_study, Pre_BMI, mean)
+
+  
+  g <- ggplot(Pre_BMI, aes(learn_about_study, analysis_bmi))
+  g + geom_boxplot(varwidth=T, fill="plum") + 
+      labs(title="BMI of participants", 
+           subtitle="Divided into how they heard of the study",
+           caption="Source: BEACH Interview",
+           x="How did you hear of our study",
+           y="BMI")+
+    geom_text(data = means, aes(label = analysis_bmi, y = analysis_bmi + 0.08))
+
+
+#formattable(Pre_BMI,asign=c("l","c","r"))
+```
+
+## BMI per group that are over 25
+```{r echo=FALSE,warning=FALSE}
+
+Pre_BMI_L25_preg <- ds_some_rows_v1%>%
+  select(record_id,analysis_bmi,learn_about_study)%>%
+  slice(85:103)%>%
+  filter(!is.na(analysis_bmi))%>%
+  filter(!is.na(learn_about_study))%>%
+  filter(analysis_bmi<25)%>%
+  group_by(learn_about_study, analysis_bmi)%>%
+  summarise(count=n())
+
+Pre_BMI_L25_birth <- ds_some_rows_v1%>%
+  select(record_id,analysis_bmi,learn_about_study)%>%
+  slice(57:84)%>%
+  filter(!is.na(analysis_bmi))%>%
+  filter(!is.na(learn_about_study))%>%
+  filter(analysis_bmi<25)%>%
+  group_by(learn_about_study, analysis_bmi)%>%
+  summarise(count=n())
+  #Presenting amount of participnats per encounter per BMI catagories
+#----------------------------------------------------------------
+g <- ggplot(Pre_BMI_L25_preg, aes(x=learn_about_study,y=count))
+g + geom_bar(stat="identity", width = 0.5) + geom_text(aes(label=count),vjust=-0.2) + 
+      labs(title="Distribution of Pregnant Participants with BMI<25", 
+           subtitle="Catagorized by How Particiapnt Heard of Study", 
+           caption="Source: BEACH Interview study") 
+#----------------------------------------------------------------
+
+means <- aggregate(analysis_bmi ~  learn_about_study, Pre_BMI_L25_preg, mean)
+
+g <- ggplot(Pre_BMI_L25_preg, aes(learn_about_study, analysis_bmi))
+  g + geom_boxplot(varwidth=T, fill="plum") + 
+      labs(title="BMI of participants", 
+           subtitle="Divided into how they heard of the study",
+           caption="Source: BEACH Interview",
+           x="How did you hear of our study",
+           y="BMI") +
+    geom_text(data = means, aes(label = analysis_bmi, y = analysis_bmi + 0.08))
+
+
+formattable(Pre_BMI_L25_preg,asign=c("l","c","r"))
+
+#----------------------------------------------------------------
+g <- ggplot(Pre_BMI_L25_birth, aes(x=learn_about_study,y=count))
+g + geom_bar(stat="identity", width = 0.5) + geom_text(aes(label=count),vjust=-0.2) + 
+      labs(title="Distribution of Post-pregnant Participants with BMI<25", 
+           subtitle="Catagorized by How Particiapnt Heard of Study", 
+           caption="Source: BEACH Interview study") 
+#----------------------------------------------------------------
+
+means <- aggregate(analysis_bmi ~  learn_about_study, Pre_BMI_L25_birth, mean)
+
+g <- ggplot(Pre_BMI_L25_birth, aes(learn_about_study, analysis_bmi))
+  g + geom_boxplot(varwidth=T, fill="plum") + 
+      labs(title="BMI of participants", 
+           subtitle="Divided into how they heard of the study",
+           caption="Source: BEACH Interview",
+           x="How did you hear of our study",
+           y="BMI") +
+    geom_text(data = means, aes(label = analysis_bmi, y = analysis_bmi + 0.08))
+
+
+formattable(Pre_BMI_L25_birth,asign=c("l","c","r"))
+```
+
+## BMI per group that are between 25 and 30 
+```{r echo=FALSE,warning=FALSE}
+
+Pre_BMI_between_preg <- ds_some_rows_v1%>%
+  select(record_id,analysis_bmi,learn_about_study)%>%
+  slice(85:103)%>%
+  filter(!is.na(analysis_bmi))%>%
+  filter(!is.na(learn_about_study))%>%
+  filter(analysis_bmi>25 & analysis_bmi<30)%>%
+  group_by(learn_about_study, analysis_bmi)%>%
+  summarise(count=n())
+
+Pre_BMI_between_Birth <- ds_some_rows_v1%>%
+  select(record_id,analysis_bmi,learn_about_study)%>%
+  slice(57:84)%>%
+  filter(!is.na(analysis_bmi))%>%
+  filter(!is.na(learn_about_study))%>%
+  filter(analysis_bmi>25 & analysis_bmi<30)%>%
+  group_by(learn_about_study, analysis_bmi)%>%
+  summarise(count=n())
+#------------------------------------------------------------------
+g <- ggplot(Pre_BMI_between_preg, aes(x=learn_about_study,y=count))
+g + geom_bar(stat="identity", width = 0.5) + geom_text(aes(label=count),vjust=-0.2) + 
+      labs(title="Distribution of Pregnant participants with BMI between 25 and 30", 
+           subtitle="Catagorized by How Particiapnt Heard of Study", 
+           caption="Source: BEACH Interview study") 
+#----------------------------------------------------------------
+
+means <- aggregate(analysis_bmi ~  learn_about_study, Pre_BMI_between_preg, mean)
+
+g <- ggplot(Pre_BMI_between_preg, aes(learn_about_study, analysis_bmi))
+  g + geom_boxplot(varwidth=T, fill="plum") + 
+      labs(title="BMI of participants", 
+           subtitle="Divided into how they heard of the study",
+           caption="Source: BEACH Interview",
+           x="How did you hear of our study",
+           y="BMI") +
+    geom_text(data = means, aes(label = analysis_bmi, y = analysis_bmi + 0.08))
+
+formattable(Pre_BMI_between_preg,asign=c("l","c","r"))
+#------------------------------------------------------------------
+g <- ggplot(Pre_BMI_between_Birth, aes(x=learn_about_study,y=count))
+g + geom_bar(stat="identity", width = 0.5) + geom_text(aes(label=count),vjust=-0.2) + 
+      labs(title="Distribution of Post-Preganant Participants with BMI between 25 and 30", 
+           subtitle="Catagorized by How Particiapnt Heard of Study", 
+           caption="Source: BEACH Interview study") 
+#----------------------------------------------------------------
+
+means <- aggregate(analysis_bmi ~  learn_about_study, Pre_BMI_between_Birth, mean)
+
+g <- ggplot(Pre_BMI_between_Birth, aes(learn_about_study, analysis_bmi))
+  g + geom_boxplot(varwidth=T, fill="plum") + 
+      labs(title="BMI of participants", 
+           subtitle="Divided into how they heard of the study",
+           caption="Source: BEACH Interview",
+           x="How did you hear of our study",
+           y="BMI") +
+    geom_text(data = means, aes(label = analysis_bmi, y = analysis_bmi + 0.08))
+  
+formattable(Pre_BMI_between_Birth,asign=c("l","c","r"))
+```
+
+## BMI per group that are over 30
+```{r echo=FALSE,warning=FALSE}
+
+Pre_BMI_H30_preg <- ds_some_rows_v1%>%
+  select(record_id,analysis_bmi,learn_about_study)%>%
+  slice(85:103)%>%
+  filter(!is.na(analysis_bmi))%>%
+  filter(!is.na(learn_about_study))%>%
+  filter(analysis_bmi>30)%>%
+  group_by(learn_about_study, analysis_bmi)%>%
+  summarise(count=n())
+
+Pre_BMI_H30_Birth <- ds_some_rows_v1%>%
+  select(record_id,analysis_bmi,learn_about_study)%>%
+  slice(57:84)%>%
+  filter(!is.na(analysis_bmi))%>%
+  filter(!is.na(learn_about_study))%>%
+  filter(analysis_bmi>30)%>%
+  group_by(learn_about_study, analysis_bmi)%>%
+  summarise(count=n())
+  #graph BMI groups per encounter
+#----------------------------------------------------------------
+
+g <- ggplot(Pre_BMI_H30_preg, aes(x=learn_about_study,y=count,fill=analysis_bmi))
+g + geom_bar(stat="identity", width = 0.5) + geom_text(aes(label=count),vjust=-0.2) + 
+      labs(title="Distribution of Pregnant participants with BMI>30", 
+           subtitle="Catagorized by How Particiapnt Heard of Study", 
+           caption="Source: BEACH Interview study") 
+
+#----------------------------------------------------------------
+
+means <- aggregate(analysis_bmi ~  learn_about_study, Pre_BMI_H30_preg, mean)
+
+g <- ggplot(Pre_BMI_H30_preg, aes(learn_about_study, analysis_bmi))
+  g + geom_boxplot(varwidth=T, fill="plum") + 
+      labs(title="BMI of participants", 
+           subtitle="Divided into how they heard of the study",
+           caption="Source: BEACH Interview",
+           x="How did you hear of our study",
+           y="BMI") +
+    geom_text(data = means, aes(label = analysis_bmi, y = analysis_bmi + 0.08))
+
+formattable(Pre_BMI_H30_preg,asign=c("l","c","r"))
+
+#----------------------------------------------------------------
+
+g <- ggplot(Pre_BMI_H30_Birth, aes(x=learn_about_study,y=count,fill=analysis_bmi))
+g + geom_bar(stat="identity", width = 0.5) + geom_text(aes(label=count),vjust=-0.2) + 
+      labs(title="Distribution of post-Preganant participants with BMI>30", 
+           subtitle="Catagorized by How Particiapnt Heard of Study", 
+           caption="Source: BEACH Interview study") 
+
+#----------------------------------------------------------------
+
+means <- aggregate(analysis_bmi ~  learn_about_study, Pre_BMI_H30_Birth, mean)
+
+g <- ggplot(Pre_BMI_H30_Birth, aes(learn_about_study, analysis_bmi))
+  g + geom_boxplot(varwidth=T, fill="plum") + 
+      labs(title="BMI of participants", 
+           subtitle="Divided into how they heard of the study",
+           caption="Source: BEACH Interview",
+           x="How did you hear of our study",
+           y="BMI") +
+    geom_text(data = means, aes(label = analysis_bmi, y = analysis_bmi + 0.08))
+
+formattable(Pre_BMI_H30_Birth,asign=c("l","c","r"))
+
+#Level of education between participants
+```
