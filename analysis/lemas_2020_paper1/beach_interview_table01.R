@@ -46,7 +46,7 @@ desired_fields_v1 <- c("record_id","int_study_grp","int_consent_complete",
                        "int_interview_complete","int_audio_length_min", # study 
                        "interphone_prepreg_bmi","interphone_age","mom3t_prepreg_bmi",
                        "int_guide_education","int_guide_employmnt","int_guide_occupation",
-                       "biosample_collection_date", "biosample_mom_baby", "biosample_aliquot_type",
+                       "biosample_mom_baby", "biosample_aliquot_type",
                        "crc_specimen_barcode","biosample_tube_type","biosample_aliquot_numb",
                        "biological_specimen_collection_complete",
                        "analysis_mat_age", "analysis_mat_age_cats", "analysis_mat_age_source", "analysis_bmi",
@@ -100,7 +100,7 @@ dat.c=dat.1 %>%
   select(record_id,redcap_repeat_instrument,redcap_repeat_instance,int_study_grp,
          int_audio_length_min,analysis_mat_age_cats,analysis_bmi_cats,mom3t_education_2,
          analysis_research_expr,analysis_kids_previous,int_guide_stoolcollect,analysis_income,analysis_income_cats,
-         biosample_collection_date,biosample_mom_baby,biosample_aliquot_type,
+         biosample_mom_baby,biosample_aliquot_type,
          crc_specimen_barcode,biosample_tube_type,biosample_aliquot_numb, biological_specimen_collection_complete) %>%
   as_tibble()
 
@@ -300,10 +300,20 @@ tidy(stool.test)
 # categories: 1, yes | 0, no
 # **************************************************************************** #
 
-test=dat.1 %>%
-  select(record_id,int_study_grp,biosample_collection_date,biosample_mom_baby,biosample_aliquot_type,
-         crc_specimen_barcode,biosample_tube_type,biosample_aliquot_numb, biological_specimen_collection_complete) 
+samples=dat.1 %>%
+  select(record_id,int_study_grp,biosample_mom_baby,biosample_aliquot_type,
+         crc_specimen_barcode,biosample_tube_type,biosample_aliquot_numb, biological_specimen_collection_complete) %>%
+  group_by(record_id) %>%
+  mutate(study_grp=first(int_study_grp)) %>%
+  filter(is.na(biological_specimen_collection_complete)==F) %>%
+  select(-int_study_grp,-biosample_mom_baby,-crc_specimen_barcode,-biological_specimen_collection_complete,-biosample_tube_type) 
 
+# facor
+samples$biosample_aliquot_type=as.factor(samples$biosample_aliquot_type)
+
+# how many donated at least 1+ samples?
+samples %>%
+  n(biosample_aliquot_type)
 
 complete=dat.1 %>%
   filter(int_interview_complete==1)%>%
