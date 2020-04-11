@@ -23,13 +23,20 @@ library(broom)
 library(dplyr)
 
 # Login to Gatorlink VPN
-
-# Get Redcap API Token
 # # https://cran.r-project.org/web/packages/keyringr/vignettes/Avoiding_plain_text_passwords_in_R_with_keyringr.html
-credential_label <- "interview_api"
-credential_path <- paste(Sys.getenv("USERPROFILE"), '\\DPAPI\\passwords\\', Sys.info()["nodename"], '\\', credential_label, '.txt', sep="")
+
+# keyringr: Avoiding plain text passwords
 uri <- "https://redcap.ctsi.ufl.edu/redcap/api/"
+
+# load token for Windows user:
+credential_label <- "interview_api" # Modify this to the label in your own computer
+credential_path <- paste(Sys.getenv("USERPROFILE"), '\\DPAPI\\passwords\\', Sys.info()["nodename"], '\\', credential_label, '.txt', sep="")
 interview_token<-decrypt_dpapi_pw(credential_path)
+
+# load token for Mac user
+credential_label <- "REDCap_BEACH_Interview" # Modify this to the label in your own computer
+interview_token<-decrypt_kc_pw(credential_label)
+
 print(interview_token)
 
 # Create connections
@@ -57,7 +64,7 @@ desired_fields_v1 <- c("record_id","int_study_grp","int_consent_complete",
 interview <- redcap_read(
   batch_size=150L,
   redcap_uri = uri, 
-  token      = interview_token, 
+  token      = interview_token,
   fields     = desired_fields_v1
   )$data
 
@@ -138,8 +145,8 @@ dat.c %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
-# chiq.test
-age.test=chisq.test(dat.c$int_study_grp,dat.c$analysis_mat_age_cats)
+# fisher.test
+age.test=fisher.test(dat.c$int_study_grp,dat.c$analysis_mat_age_cats)
 tidy(age.test)
 
 # **************************************************************************** #
@@ -163,8 +170,8 @@ dat.c %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
-# chiq.test
-kid.test=chisq.test(dat.c$int_study_grp,dat.c$analysis_kids_previous)
+# fisher.test
+kid.test=fisher.test(dat.c$int_study_grp,dat.c$analysis_kids_previous)
 tidy(kid.test)
 
 # **************************************************************************** #
@@ -191,8 +198,8 @@ dat.c %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
-# chiq.test
-edu.test=chisq.test(dat.c$int_study_grp,dat.c$mom3t_education_2)
+# fisher.test
+edu.test=fisher.test(dat.c$int_study_grp,dat.c$mom3t_education_2)
 tidy(edu.test)
 
 # **************************************************************************** #
@@ -216,8 +223,8 @@ dat.c %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
-# chiq.test
-income.test=chisq.test(dat.c$int_study_grp,dat.c$analysis_income_cats)
+# fisher.test
+income.test=fisher.test(dat.c$int_study_grp,dat.c$analysis_income_cats)
 tidy(income.test)
 
 # **************************************************************************** #
@@ -241,8 +248,8 @@ dat.c %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
-# chiq.test
-bmi.test=chisq.test(dat.c$int_study_grp,dat.c$analysis_bmi_cats)
+# fisher.test
+bmi.test=fisher.test(dat.c$int_study_grp,dat.c$analysis_bmi_cats)
 tidy(bmi.test)
 
 # **************************************************************************** #
@@ -266,8 +273,8 @@ dat.c %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
-# chiq.test
-research.test=chisq.test(dat.c$int_study_grp,dat.c$analysis_research_expr)
+# fisher.test
+research.test=fisher.test(dat.c$int_study_grp,dat.c$analysis_research_expr)
 tidy(research.test)
 
 # **************************************************************************** #
@@ -291,8 +298,8 @@ dat.c %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
-# chiq.test
-stool.test=chisq.test(dat.c$int_study_grp,dat.c$int_guide_stoolcollect)
+# fisher.test
+stool.test=fisher.test(dat.c$int_study_grp,dat.c$int_guide_stoolcollect)
 tidy(stool.test)
 
 # **************************************************************************** #

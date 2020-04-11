@@ -24,13 +24,20 @@ library(dplyr)
 library(tidyr)
 
 # Login to Gatorlink VPN
-
-# Get Redcap API Token
 # # https://cran.r-project.org/web/packages/keyringr/vignettes/Avoiding_plain_text_passwords_in_R_with_keyringr.html
-credential_label <- "interview_api"
-credential_path <- paste(Sys.getenv("USERPROFILE"), '\\DPAPI\\passwords\\', Sys.info()["nodename"], '\\', credential_label, '.txt', sep="")
+
+# keyringr: Avoiding plain text passwords
 uri <- "https://redcap.ctsi.ufl.edu/redcap/api/"
+
+# load token for Windows user:
+credential_label <- "interview_api" # Modify this to the label in your own computer
+credential_path <- paste(Sys.getenv("USERPROFILE"), '\\DPAPI\\passwords\\', Sys.info()["nodename"], '\\', credential_label, '.txt', sep="")
 interview_token<-decrypt_dpapi_pw(credential_path)
+
+# load token for Mac user
+credential_label <- "REDCap_BEACH_Interview" # Modify this to the label in your own computer
+interview_token<-decrypt_kc_pw(credential_label)
+
 print(interview_token)
 
 # Create connections
@@ -80,7 +87,7 @@ dat=interview %>%
   select(record_id,int_study_grp,
          int_guide_studylength,int_guide_transportation,
          int_guide_visitlength, int_guide_timeofday,int_guide_reminders,
-         int_guide_timeofday,int_guide_advanceremind,
+         int_guide_timeofday,int_guide_advanceremind, analysis_research_expr,
          int_guide_contactby___1,int_guide_contactby___2,int_guide_contactby___3,
          int_guide_contactby___4) %>%
   as_tibble()
@@ -169,7 +176,7 @@ dat.c %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
-# Group
+# Group (Pregnant VS Breastfeeding)
 #---------
 dat.c %>% 
   select(int_study_grp, study_length_cats) %>% 
@@ -177,9 +184,21 @@ dat.c %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
-# chiq.test
-study.test=chisq.test(dat.c$int_study_grp,dat.c$study_length_cats)
+# fisher.test
+study.test=fisher.test(dat.c$int_study_grp,dat.c$study_length_cats)
 tidy(study.test)
+
+# Group (Research Experience VS No Research Experience)
+#---------
+dat.c %>% 
+  select(analysis_research_expr, study_length_cats) %>% 
+  group_by(analysis_research_expr, study_length_cats) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
+
+# fisher.test
+study.re.test=fisher.test(dat.c$analysis_research_expr,dat.c$study_length_cats)
+tidy(study.re.test)
 
 # ****************************************************************** #
 # VISIT NUMBER (count)         
@@ -201,7 +220,7 @@ dat.c %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
-# Group
+# Group (Pregnant VS Breastfeeding)
 #---------
 dat.c %>% 
   select(int_study_grp, study_visit_cats) %>% 
@@ -209,9 +228,21 @@ dat.c %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
-# chiq.test
-visit.test=chisq.test(dat.c$int_study_grp,dat.c$study_visit_cats)
+# fisher.test
+visit.test=fisher.test(dat.c$int_study_grp,dat.c$study_visit_cats)
 tidy(visit.test)
+
+# Group (Research Experience VS No Research Experience)
+#---------
+dat.c %>% 
+  select(analysis_research_expr, study_visit_cats) %>% 
+  group_by(analysis_research_expr, study_visit_cats) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
+
+# fisher.test
+visit.re.test=fisher.test(dat.c$analysis_research_expr,dat.c$study_visit_cats)
+tidy(visit.re.test)
 
 # ****************************************************************** #
 # VISIT LENGTH (minutes)          
@@ -233,7 +264,7 @@ dat.c %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
-# Group
+# Group (Pregnant VS Breastfeeding)
 #---------
 dat.c %>% 
   select(int_study_grp, study_visit_time_cats) %>% 
@@ -241,9 +272,21 @@ dat.c %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
-# chiq.test
-visit_time.test=chisq.test(dat.c$int_study_grp,dat.c$study_visit_time_cats)
+# fisher.test
+visit_time.test=fisher.test(dat.c$int_study_grp,dat.c$study_visit_time_cats)
 tidy(visit_time.test)
+
+# Group (Research Experience VS No Research Experience)
+#---------
+dat.c %>% 
+  select(analysis_research_expr, study_visit_time_cats) %>% 
+  group_by(analysis_research_expr, study_visit_time_cats) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
+
+# fisher.test
+visit_time.re.test=fisher.test(dat.c$analysis_research_expr,dat.c$study_visit_time_cats)
+tidy(visit_time.re.test)
 
 # ****************************************************************** #
 # VISIT TIME OF DAY          
@@ -258,7 +301,7 @@ dat.c %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
-# Group
+# Group (Pregnant VS Breastfeeding)
 #---------
 dat.c %>% 
   select(int_study_grp, int_guide_timeofday) %>% 
@@ -266,9 +309,21 @@ dat.c %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
-# chiq.test
-visit_time_day.test=chisq.test(dat.c$int_study_grp,dat.c$int_guide_timeofday)
+# fisher.test
+visit_time_day.test=fisher.test(dat.c$int_study_grp,dat.c$int_guide_timeofday)
 tidy(visit_time_day.test)
+
+# Group (Research Experience VS No Research Experience)
+#---------
+dat.c %>% 
+  select(analysis_research_expr, int_guide_timeofday) %>% 
+  group_by(analysis_research_expr, int_guide_timeofday) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
+
+# fisher.test
+visit_time_day.re.test=fisher.test(dat.c$analysis_research_expr,dat.c$int_guide_timeofday)
+tidy(visit_time_day.re.test)
 
 # ****************************************************************** #
 # STUDY REMINDERS                * t-test() may not be appropriate?
@@ -283,7 +338,7 @@ dat.c %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
-# Group
+# Group (Pregnant VS Breastfeeding)
 #---------
 dat.c %>% 
   select(int_study_grp, int_guide_reminders) %>% 
@@ -291,9 +346,21 @@ dat.c %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
-# chiq.test
-visit_reminder.test=t.test(dat.c$int_study_grp,dat.c$int_guide_reminders)
+# fisher.test
+visit_reminder.test=fisher.test(dat.c$int_study_grp,dat.c$int_guide_reminders)
 tidy(visit_reminder.test)
+
+# Group (Research Experience VS No Research Experience)
+#---------
+dat.c %>% 
+  select(analysis_research_expr, int_guide_reminders) %>% 
+  group_by(analysis_research_expr, int_guide_reminders) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
+
+# fisher.test
+visit_reminder.re.test=fisher.test(dat.c$analysis_research_expr,dat.c$int_guide_reminders)
+tidy(visit_reminder.re.test)
 
 # ****************************************************************** #
 # PREFERED CONTACT         
@@ -303,7 +370,7 @@ tidy(visit_reminder.test)
 # data wrangle
 #---------------
 dat1=dat.c %>%
-  select(record_id,int_study_grp,int_guide_contactby___1,int_guide_contactby___2,int_guide_contactby___3,int_guide_contactby___4) %>%
+  select(record_id,int_study_grp,analysis_research_expr,int_guide_contactby___1,int_guide_contactby___2,int_guide_contactby___3,int_guide_contactby___4) %>%
   na_if(0) %>% 
   gather(key = "contact", value = "value", na.rm = TRUE,
          int_guide_contactby___1, int_guide_contactby___2, int_guide_contactby___3, int_guide_contactby___4) %>%
@@ -322,7 +389,7 @@ dat1 %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
-# Group
+# Group (Pregnant VS Breastfeeding)
 #---------
 dat1 %>% 
   select(int_study_grp, contact_pref) %>% 
@@ -330,9 +397,21 @@ dat1 %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
-# chiq.test
-pref_contact.test=chisq.test(dat1$int_study_grp,dat1$contact_pref)
+# fisher.test
+pref_contact.test=fisher.test(dat1$int_study_grp,dat1$contact_pref)
 tidy(pref_contact.test)
+
+# Group (Research Experience VS No Research Experience)
+#---------
+dat1 %>% 
+  select(analysis_research_expr, contact_pref) %>% 
+  group_by(analysis_research_expr, contact_pref) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
+
+# fisher.test
+pref_contact.re.test=fisher.test(dat1$analysis_research_expr,dat1$contact_pref)
+tidy(pref_contact.re.test)
 
 # ****************************************************************** #
 # ADVANCE REMINDERS (days)         
@@ -354,7 +433,7 @@ dat.c %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
-# Group
+# Group (Pregnant VS Breastfeeding)
 #---------
 dat.c %>% 
   select(int_study_grp, advanceremind_cats) %>% 
@@ -362,6 +441,18 @@ dat.c %>%
   summarise (n = n()) %>%
   mutate(freq = n / sum(n))
 
-# chiq.test
-adv_reminder.test=chisq.test(dat.c$int_study_grp,dat.c$advanceremind_cats)
+# fisher.test
+adv_reminder.test=fisher.test(dat.c$int_study_grp,dat.c$advanceremind_cats)
 tidy(adv_reminder.test)
+
+# Group (Research Experience VS No Research Experience)
+#---------
+dat.c %>% 
+  select(analysis_research_expr, advanceremind_cats) %>% 
+  group_by(analysis_research_expr, advanceremind_cats) %>%
+  summarise (n = n()) %>%
+  mutate(freq = n / sum(n))
+
+# fisher.test
+adv_reminder.re.test=fisher.test(dat.c$analysis_research_expr,dat.c$advanceremind_cats)
+tidy(adv_reminder.re.test)
