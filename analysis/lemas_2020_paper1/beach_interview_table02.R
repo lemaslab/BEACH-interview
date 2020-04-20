@@ -403,6 +403,25 @@ tidy(pref_contact.test)
 
 # Group (Research Experience VS No Research Experience)
 #---------
+
+# mom-ids with previous research experience
+mom_pre_expr <- c(dat.c %>% 
+                    filter(analysis_research_expr==1) %>% 
+                    pull(record_id))
+# mom-ids without previous research experience
+mom_no_pre_expr <- c(dat.c %>% 
+                       filter(analysis_research_expr==1) %>% 
+                       pull(record_id))
+
+# mom-ids with missing value of previous research experience
+mom_miss_pre_expr <- c(dat.c %>% 
+                         filter(is.na(analysis_research_expr)) %>% 
+                         pull(record_id))
+
+dat1 <- dat1 %>%
+  group_by(record_id) %>%
+  mutate(analysis_research_expr = ifelse(record_id=="BIS007A", NA, record_id %in% mom_pre_expr))
+
 dat1 %>% 
   select(analysis_research_expr, contact_pref) %>% 
   group_by(analysis_research_expr, contact_pref) %>%
