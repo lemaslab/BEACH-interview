@@ -54,6 +54,8 @@ desired_fields_v1 <- c("record_id","int_study_grp","int_consent_complete",
                        "analysis_kids_previous", "analysis_time_of_day","int_guide_stoolcollect","analysis_income")
 
 # pull data-V1
+ds=NULL
+
 interview <- redcap_read(
   batch_size=150L,
   redcap_uri = uri, 
